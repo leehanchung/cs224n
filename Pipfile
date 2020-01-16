@@ -12,6 +12,7 @@ docopt = "*"
 nltk = "*"
 jupyterlab = "*"
 matplotlib = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3.6"
