@@ -2,7 +2,8 @@
 
 Self work on Stanford CS 224n.
 
-## Assignment 1
+## Assignment 1 :heavy_check_mark:
+Constructed count vectorized embeddings using co-occurance matrix and used Gensim word2vec to study predictions and language biases.
 
 ## Assignment 2
 
