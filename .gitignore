@@ -1,1 +1,7 @@
+.vscode/
 .ipynb_checkpoints/
+a2/utils/*
+__pycache__
+*~
+*.npy
+*.pickle
