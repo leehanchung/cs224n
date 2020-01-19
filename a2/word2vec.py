@@ -17,7 +17,11 @@ def sigmoid(x):
     """
 
     ### YOUR CODE HERE
-
+    # numerically stable sigmoid
+    s =  np.where(x >= 0, 
+                  1 / (1 + np.exp(-x)), 
+                  np.exp(x) / (1 + np.exp(x)))
+    #s = 1 / (1 + np.exp(-x))
     ### END YOUR CODE
 
     return s
@@ -58,7 +62,27 @@ def naiveSoftmaxLossAndGradient(
     ### This numerically stable implementation helps you avoid issues pertaining
     ### to integer overflow. 
 
+    gradOutsideVecs = np.zeros_like(outsideVectors)
+    # conditional probability distributino p(O = o | C = c) is taking vector dot products
+    # and applying softmax
+    # shape (N,) N x 1
+    y_hat = softmax(np.dot(outsideVectors, centerWordVec))
 
+    # for a single pair of words c and o, the loss is given by:
+    # J(v_c, o, U) = -log P(O = o | C = c)
+    loss = -np.log(y_hat[outsideWordIdx])
+
+    # back prop 
+    # derive the correct one-hot vector, [..., 0, outsideWordIdx=1, 0, ...]
+    y = np.zeros_like(y_hat)
+    y[outsideWordIdx] = 1
+    
+    gradCenterVec = np.dot(y_hat - y, outsideVectors)
+    gradOutsideVecs = np.outer(y_hat - y, centerWordVec)
+    
+    # sanity check
+    assert gradCenterVec.shape == centerWordVec.shape
+    assert gradOutsideVecs.shape == outsideVectors.shape
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
@@ -105,8 +129,22 @@ def negSamplingLossAndGradient(
     ### YOUR CODE HERE
 
     ### Please use your implementation of sigmoid in here.
+    gradOutsideVecs = np.zeros(outsideVectors.shape)
+    
+    # Calculate the first term.
+    y_hat = sigmoid(np.dot(outsideVectors[outsideWordIdx], centerWordVec))
+    loss = -np.log(y_hat)
+    
+    gradCenterVec = np.dot(y_hat - 1, outsideVectors[outsideWordIdx])
+    gradOutsideVecs[outsideWordIdx] = np.dot(y_hat - 1, centerWordVec)
 
-
+    # Calculate the second term
+    for i in range(K):
+        w_k = indices[i+1]
+        y_k_hat = sigmoid(-np.dot(outsideVectors[w_k], centerWordVec))
+        loss += -np.log(y_k_hat)
+        gradOutsideVecs[w_k] += np.dot(1.0 - y_k_hat, centerWordVec)
+        gradCenterVec += np.dot(1.0 - y_k_hat, outsideVectors[w_k])
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
@@ -149,6 +187,23 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
 
     ### YOUR CODE HERE
 
+    # skip-gram model predicts outside words from the center word
+    # get center word vec first from currentCenterWord
+    center_word_idx = word2Ind[currentCenterWord]
+    center_word_vec = centerWordVectors[center_word_idx]
+
+    for outside_word in outsideWords:
+
+        outside_word_idx = word2Ind[outside_word]
+        step_loss, grad_center, grad_outside =word2vecLossAndGradient(center_word_vec,
+                                                                      outside_word_idx,
+                                                                      outsideVectors,
+                                                                      dataset)
+
+        loss += step_loss
+        gradCenterVecs[center_word_idx] += grad_center
+        gradOutsideVectors += grad_outside
+    
     ### END YOUR CODE
 
     return loss, gradCenterVecs, gradOutsideVectors
