@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CS224N 2018-19: Homework 3
+CS224N 2019-20: Homework 3
 run.py: Run the dependency parser.
 Sahil Chopra <schopra8@stanford.edu>
+Haoshen Hong <haoshen@stanford.edu>
 """
 from datetime import datetime
 import os
 import pickle
 import math
 import time
+import argparse
 
 from torch import nn, optim
 import torch
@@ -17,6 +19,10 @@ from tqdm import tqdm
 
 from parser_model import ParserModel
 from utils.parser_utils import minibatches, load_and_preprocess_data, AverageMeter
+
+parser = argparse.ArgumentParser(description='Train neural dependency parser in pytorch')
+parser.add_argument('-d', '--debug', action='store_true', help='whether to enter debug mode')
+args = parser.parse_args()
 
 # -----------------
 # Primary Functions
@@ -38,13 +44,15 @@ def train(parser, train_data, dev_data, output_path, batch_size=1024, n_epochs=1
     ### YOUR CODE HERE (~2-7 lines)
     ### TODO:
     ###      1) Construct Adam Optimizer in variable `optimizer`
-    ###      2) Construct the Cross Entropy Loss Function in variable `loss_func`
+    ###      2) Construct the Cross Entropy Loss Function in variable `loss_func` with `mean`
+    ###         reduction (default)
     ###
     ### Hint: Use `parser.model.parameters()` to pass optimizer
     ###       necessary parameters to tune.
     ### Please see the following docs for support:
     ###     Adam Optimizer: https://pytorch.org/docs/stable/optim.html
     ###     Cross Entropy Loss: https://pytorch.org/docs/stable/nn.html#crossentropyloss
+
 
 
     ### END YOUR CODE
@@ -100,6 +108,8 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
             ###     Optimizer Step: https://pytorch.org/docs/stable/optim.html#optimizer-step
 
 
+
+
             ### END YOUR CODE
             prog.update(1)
             loss_meter.update(loss.item())
@@ -114,11 +124,9 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
 
 
 if __name__ == "__main__":
-    # Note: Set debug to False, when training on entire corpus
-    debug = True
-    # debug = False
-
-    assert(torch.__version__ == "1.0.0"),  "Please install torch version 1.0.0"
+    debug = args.debug
+    
+    assert(tuple(map(int, torch.__version__.split("."))) >= (1, 0, 0)),  "Please install torch version >= 1.0.0"
 
     print(80 * "=")
     print("INITIALIZING")

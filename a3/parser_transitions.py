@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CS224N 2018-19: Homework 3
+CS224N 2019-20: Homework 3
 parser_transitions.py: Algorithms for completing partial parsess.
 Sahil Chopra <schopra8@stanford.edu>
+Haoshen Hong <haoshen@stanford.edu>
 """
 
 import sys
@@ -153,13 +154,30 @@ def test_parse():
 
 class DummyModel(object):
     """Dummy model for testing the minibatch_parse function
-    First shifts everything onto the stack and then does exclusively right arcs if the first word of
-    the sentence is "right", "left" if otherwise.
     """
+    def __init__(self, mode = "unidirectional"):
+        self.mode = mode
+
     def predict(self, partial_parses):
+        if self.mode == "unidirectional":
+            return self.unidirectional_predict(partial_parses)
+        elif self.mode == "interleave":
+            return self.interleave_predict(partial_parses)
+        else:
+            raise NotImplementedError()
+
+    def unidirectional_predict(self, partial_parses):
+        """First shifts everything onto the stack and then does exclusively right arcs if the first word of
+        the sentence is "right", "left" if otherwise.
+        """
         return [("RA" if pp.stack[1] is "right" else "LA") if len(pp.buffer) == 0 else "S"
                 for pp in partial_parses]
 
+    def interleave_predict(self, partial_parses):
+        """First shifts everything onto the stack and then interleaves "right" and "left".
+        """
+        return [("RA" if len(pp.stack) % 2 == 0 else "LA") if len(pp.buffer) == 0 else "S"
+                for pp in partial_parses]
 
 def test_dependencies(name, deps, ex_deps):
     """Tests the provided dependencies match the expected dependencies"""
@@ -172,6 +190,8 @@ def test_minibatch_parse():
     """Simple tests for the minibatch_parse function
     Warning: these are not exhaustive
     """
+
+    # Unidirectional arcs test
     sentences = [["right", "arcs", "only"],
                  ["right", "arcs", "only", "again"],
                  ["left", "arcs", "only"],
@@ -185,6 +205,18 @@ def test_minibatch_parse():
                       (('only', 'ROOT'), ('only', 'arcs'), ('only', 'left')))
     test_dependencies("minibatch_parse", deps[3],
                       (('again', 'ROOT'), ('again', 'arcs'), ('again', 'left'), ('again', 'only')))
+
+    # Out-of-bound test
+    sentences = [["right"]]
+    deps = minibatch_parse(sentences, DummyModel(), 2)
+    test_dependencies("minibatch_parse", deps[0], (('ROOT', 'right'),))
+
+    # Mixed arcs test
+    sentences = [["this", "is", "interleaving", "dependency", "test"]]
+    deps = minibatch_parse(sentences, DummyModel(mode="interleave"), 1)
+    test_dependencies("minibatch_parse", deps[0],
+                      (('ROOT', 'is'), ('dependency', 'interleaving'),
+                      ('dependency', 'test'), ('is', 'dependency'), ('is', 'this')))
     print("minibatch_parse test passed!")
 
 

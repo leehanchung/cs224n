@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CS224N 2018-19: Homework 3
+CS224N 2019-20: Homework 3
 parser_model.py: Feed-Forward Neural Network for Dependency Parsing
 Sahil Chopra <schopra8@stanford.edu>
+Haoshen Hong <haoshen@stanford.edu>
 """
-import pickle
-import os
-import time
+import argparse
+import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 class ParserModel(nn.Module):
-    """ Feedforward neural network with an embedding layer and single hidden layer.
+    """ Feedforward neural network with an embedding layer and two hidden layers.
     The ParserModel will predict which transition should be applied to a
     given partial parse configuration.
 
     PyTorch Notes:
         - Note that "ParserModel" is a subclass of the "nn.Module" class. In PyTorch all neural networks
             are a subclass of this "nn.Module".
-        - The "__init__" method is where you define all the layers and their respective parameters
+        - The "__init__" method is where you define all the layers and parameters
             (embedding layers, linear layers, dropout layers, etc.).
         - "__init__" gets automatically called when you create a new instance of your class, e.g.
             when you write "m = ParserModel()".
@@ -34,7 +34,7 @@ class ParserModel(nn.Module):
         hidden_size=200, n_classes=3, dropout_prob=0.5):
         """ Initialize the parser model.
 
-        @param embeddings (Tensor): word embeddings (num_words, embedding_size)
+        @param embeddings (ndarray): word embeddings (num_words, embedding_size)
         @param n_features (int): number of input features
         @param hidden_size (int): number of hidden units
         @param n_classes (int): number of output classes
@@ -46,102 +46,133 @@ class ParserModel(nn.Module):
         self.dropout_prob = dropout_prob
         self.embed_size = embeddings.shape[1]
         self.hidden_size = hidden_size
-        self.pretrained_embeddings = nn.Embedding(embeddings.shape[0], self.embed_size)
-        self.pretrained_embeddings.weight = nn.Parameter(torch.tensor(embeddings))
+        self.embeddings = nn.Parameter(torch.tensor(embeddings))
 
-        ### YOUR CODE HERE (~5 Lines)
+        ### YOUR CODE HERE (~10 Lines)
         ### TODO:
-        ###     1) Construct `self.embed_to_hidden` linear layer, initializing the weight matrix
-        ###         with the `nn.init.xavier_uniform_` function with `gain = 1` (default)
+        ###     1) Declare `self.embed_to_hidden_weight` and `self.embed_to_hidden_bias` as `nn.Parameter`.
+        ###        Initialize weight with the `nn.init.xavier_uniform_` function and bias with `nn.init.uniform_`
+        ###        with default parameters.
         ###     2) Construct `self.dropout` layer.
-        ###     3) Construct `self.hidden_to_logits` linear layer, initializing the weight matrix
-        ###         with the `nn.init.xavier_uniform_` function with `gain = 1` (default)
+        ###     3) Declare `self.hidden_to_logits_weight` and `self.hidden_to_logits_bias`.
+        ###        Initialize weight with the `nn.init.xavier_uniform_` function and bias with `nn.init.uniform_`
+        ###        with default parameters.
         ###
-        ### Note: Here, we use Xavier Uniform Initialization for our Weight initialization.
-        ###         It has been shown empirically, that this provides better initial weights
-        ###         for training networks than random uniform initialization.
-        ###         For more details checkout this great blogpost:
-        ###             http://andyljones.tumblr.com/post/110998971763/an-explanation-of-xavier-initialization 
-        ### Hints:
-        ###     - After you create a linear layer you can access the weight
-        ###       matrix via:
-        ###         linear_layer.weight
+        ### Note: Trainable variables are declared as `nn.Parameter` which is a commonly used API
+        ###       to include a tensor into a computational graph to support updating w.r.t its gradient.
+        ###       Here, we use Xavier Uniform Initialization for our Weight initialization.
+        ###       It has been shown empirically, that this provides better initial weights
+        ###       for training networks than random uniform initialization.
+        ###       For more details checkout this great blogpost:
+        ###             http://andyljones.tumblr.com/post/110998971763/an-explanation-of-xavier-initialization
         ###
         ### Please see the following docs for support:
-        ###     Linear Layer: https://pytorch.org/docs/stable/nn.html#torch.nn.Linear
-        ###     Xavier Init: https://pytorch.org/docs/stable/nn.html#torch.nn.init.xavier_uniform_
-        ###     Dropout: https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
+        ###     nn.Parameter: https://pytorch.org/docs/stable/nn.html#parameters
+        ###     Initialization: https://pytorch.org/docs/stable/nn.init.html
+        ###     Dropout: https://pytorch.org/docs/stable/nn.html#dropout-layers
+
+
 
 
         ### END YOUR CODE
 
-    def embedding_lookup(self, t):
-        """ Utilize `self.pretrained_embeddings` to map input `t` from input tokens (integers)
-            to embedding vectors.
+    def embedding_lookup(self, w):
+        """ Utilize `w` to select embeddings from embedding matrix `self.embeddings`
+            @param w (Tensor): input tensor of word indices (batch_size, n_features)
 
-            PyTorch Notes:
-                - `self.pretrained_embeddings` is a torch.nn.Embedding object that we defined in __init__
-                - Here `t` is a tensor where each row represents a list of features. Each feature is represented by an integer (input token).
-                - In PyTorch the Embedding object, e.g. `self.pretrained_embeddings`, allows you to
-                    go from an index to embedding. Please see the documentation (https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding)
-                    to learn how to use `self.pretrained_embeddings` to extract the embeddings for your tensor `t`.
-
-            @param t (Tensor): input tensor of tokens (batch_size, n_features)
-
-            @return x (Tensor): tensor of embeddings for words represented in t
+            @return x (Tensor): tensor of embeddings for words represented in w
                                 (batch_size, n_features * embed_size)
         """
+
         ### YOUR CODE HERE (~1-3 Lines)
         ### TODO:
-        ###     1) Use `self.pretrained_embeddings` to lookup the embeddings for the input tokens in `t`.
-        ###     2) After you apply the embedding lookup, you will have a tensor shape (batch_size, n_features, embedding_size).
-        ###         Use the tensor `view` method to reshape the embeddings tensor to (batch_size, n_features * embedding_size)
+        ###     1) For each index `i` in `w`, select `i`th vector from self.embeddings
+        ###     2) Reshape the tensor using `view` function if necessary
         ###
-        ### Note: In order to get batch_size, you may need use the tensor .size() function:
-        ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.size
+        ### Note: All embedding vectors are stacked and stored as a matrix. The model receives
+        ###       a list of indices representing a sequence of words, then it calls this lookup
+        ###       function to map indices to sequence of embeddings.
         ###
-        ###  Please see the following docs for support:
-        ###     Embedding Layer: https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding
+        ###       This problem aims to test your understanding of embedding lookup,
+        ###       so DO NOT use any high level API like nn.Embedding
+        ###       (we are asking you to implement that!). Pay attention to tensor shapes
+        ###       and reshape if necessary. Make sure you know each tensor's shape before you run the code!
+        ###
+        ### Pytorch has some useful APIs for you, and you can use either one
+        ### in this problem (except nn.Embedding). These docs might be helpful:
+        ###     Index select: https://pytorch.org/docs/stable/torch.html#torch.index_select
+        ###     Gather: https://pytorch.org/docs/stable/torch.html#torch.gather
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
+
 
 
         ### END YOUR CODE
         return x
 
 
-    def forward(self, t):
+    def forward(self, w):
         """ Run the model forward.
 
             Note that we will not apply the softmax function here because it is included in the loss function nn.CrossEntropyLoss
 
             PyTorch Notes:
                 - Every nn.Module object (PyTorch model) has a `forward` function.
-                - When you apply your nn.Module to an input tensor `t` this function is applied to the tensor.
-                    For example, if you created an instance of your ParserModel and applied it to some `t` as follows,
-                    the `forward` function would called on `t` and the result would be stored in the `output` variable:
+                - When you apply your nn.Module to an input tensor `w` this function is applied to the tensor.
+                    For example, if you created an instance of your ParserModel and applied it to some `w` as follows,
+                    the `forward` function would called on `w` and the result would be stored in the `output` variable:
                         model = ParserModel()
-                        output = model(t) # this calls the forward function
+                        output = model(w) # this calls the forward function
                 - For more details checkout: https://pytorch.org/docs/stable/nn.html#torch.nn.Module.forward
 
-        @param t (Tensor): input tensor of tokens (batch_size, n_features)
+        @param w (Tensor): input tensor of tokens (batch_size, n_features)
 
         @return logits (Tensor): tensor of predictions (output after applying the layers of the network)
                                  without applying softmax (batch_size, n_classes)
         """
-        ###  YOUR CODE HERE (~3-5 lines)
+        ### YOUR CODE HERE (~3-5 lines)
         ### TODO:
-        ###     1) Apply `self.embedding_lookup` to `t` to get the embeddings
-        ###     2) Apply `embed_to_hidden` linear layer to the embeddings
-        ###     3) Apply relu non-linearity to the output of step 2 to get the hidden units.
-        ###     4) Apply dropout layer to the output of step 3.
-        ###     5) Apply `hidden_to_logits` layer to the output of step 4 to get the logits.
+        ###     Complete the forward computation as described in write-up. In addition, include a dropout layer
+        ###     as decleared in `__init__` after ReLU function.
         ###
         ### Note: We do not apply the softmax to the logits here, because
         ### the loss function (torch.nn.CrossEntropyLoss) applies it more efficiently.
         ###
         ### Please see the following docs for support:
+        ###     Matrix product: https://pytorch.org/docs/stable/torch.html#torch.matmul
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
 
 
         ### END YOUR CODE
         return logits
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Simple sanity check for parser_model.py')
+    parser.add_argument('-e', '--embedding', action='store_true', help='sanity check for embeding_lookup function')
+    parser.add_argument('-f', '--forward', action='store_true', help='sanity check for forward function')
+    args = parser.parse_args()
+
+    embeddings = np.zeros((100, 30), dtype=np.float32)
+    model = ParserModel(embeddings)
+
+    def check_embedding():
+        inds = torch.randint(0, 100, (4, 36), dtype=torch.long)
+        selected = model.embedding_lookup(inds)
+        assert np.all(selected.data.numpy() == 0), "The result of embedding lookup: " \
+                                      + repr(selected) + " contains non-zero elements."
+
+    def check_forward():
+        inputs =torch.randint(0, 100, (4, 36), dtype=torch.long)
+        out = model(inputs)
+        expected_out_shape = (4, 3)
+        assert out.shape == expected_out_shape, "The result shape of forward is: " + repr(out.shape) + \
+                                                " which doesn't match expected " + repr(expected_out_shape)
+
+    if args.embedding:
+        check_embedding()
+        print("Embedding_lookup sanity check passes!")
+
+    if args.forward:
+        check_forward()
+        print("Forward sanity check passes!")

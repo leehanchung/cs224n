@@ -29,12 +29,11 @@ between $y$ and $\hat{y}$; i.e., show that $$-\sum_{w\in{Vocab}}^{} y_w\log{\hat
 
 \noindent (b) (5 points) Compute the partial derivative of $J_{naive-softmax}(v_c,o,U)$ with respect to $v_c$.  Please write your answer in terms of $y$, $\hat{y}$, and $U$.
 \bigbreak
-\textbf{Answer:} from (a), we know the derivative of cross-entropy loss is equivalent to softmax loss for one hot vector $\mathbf{y}$, therefore,  
+\textbf{Answer:} Let input vector be $\theta = U^\intercal v_c$ and prediction function be $\hat{y} = softmax(\theta)$. From (a), we know the derivative of cross-entropy loss is equivalent to softmax loss for one hot vector $\mathbf{y}$, therefore,  
 
 \begin{align*}
 J &= CrossEntropy(y, \hat{y})\\
-\hat{y} &= softmax(\theta) \\
-\therefore \frac{\partial J}{\partial \theta} &= (\hat{y} - y)^\intercal    
+\therefore \frac{\partial J}{\partial \theta} &= (\hat{y} - y)^\intercal\\
 \end{align*}
 \indent Reference: \url{https://deepnotes.io/softmax-crossentropy}
 \smallbreak
@@ -68,7 +67,16 @@ From above, we can use chain rule to solve the derivative:
 \end{equation}
 Please compute the derivative of $\sigma(x)$ with respect to $x$, where $x$ is a scalar.  Hint:  you may want to write your answer in terms of $\sigma(x)$.
 \bigbreak
-\textbf{Answer:} $\sigma(x)^{\prime} = \sigma(x) (1 - \sigma(x))$
+\textbf{Answer:} Apply quotient rule $f(x) = \frac{g(x)}{h(x)}$, $f\prime(x) = \frac{g\prime(x)h(x) + g(x)h\prime(x)}{h^2(x)}$, we have:
+\begin{align*}
+\frac{\partial \sigma(x)}{\partial x} &= \frac{\partial \frac{e^x}{e^x+1}}{\partial x}\\
+&=\frac{(e^x+1)e^x - e^x e^x}{(e^x+1)^2}\\
+&=\frac{e^x}{(e^x + 1)^2}\\
+&=\sigma(x) \frac{1}{e^x+1}\\
+&=\sigma(x) \frac{-e^x + e^x + 1}{e^x+1}\\
+&=\sigma(x) (\frac{-e^x}{e^x+1} + \frac{e^x + 1}{e^x+1} )\\
+&=\sigma(x) (1 - \sigma(x))
+\end{align*}
 \bigbreak
 
 \noindent(e)  (4 points) Now we shall consider the Negative Sampling loss, which is an alternative to the Naive Softmax loss. Assume that $K$ negative samples (words) are drawn from the vocabulary. For simplicity of notation we shall refer to them as $w_1, w_2, \cdots,w_K$ and their outside vectors as $\mathbf{u_1},\cdots,\mathbf{u_K}$. Note that $o \not\in {w_1,...,w_K}$.  For a center word $c$ and an outside word $o$, the negative sampling loss function is given by:
@@ -81,7 +89,7 @@ Please repeat parts (b) and (c), computing the partial derivatives of $J_{neg-sa
 \textbf{Answer:}
 \begin{align*}
 \frac{\partial J}{\partial u_o} &= (\sigma(u_o^\intercal v_c) - 1)v_c \\
-\frac{\partial J}{\partial u_k} &= (\sigma(u_k^\intercal v_c) - 1)v_c, k \in [1, K] \\
+\frac{\partial J}{\partial u_k} &= (\sigma(u_k^\intercal v_c) - 1)v_c, \forall k \in [1, K] \\
 \frac{\partial J}{\partial v_c} &=  (\sigma(u_o^\intercal v_c) - 1)u_o - \sum_{k=1}^{K}(\sigma(-u_k^\intercal v_c)-1)u_k
 \end{align*}
 \textbf{Answer:} For naive softmax loss, it computes the whole outside vectors $U$.  But for negative sampling loss, it only calculates a fixed size K. Thus, negative sampling loss is more compute and memory efficient
@@ -90,7 +98,7 @@ Please repeat parts (b) and (c), computing the partial derivatives of $J_{neg-sa
 \noindent(f)  (3 points) Suppose the center word $w_t$ and the context window is $[w_{t-m}, \cdots, w_{t-1}, w_t, w_{t+1}, \cdots, w_{t+m}]$, where m is the context window size. Recall that for the skip-gram version of word2Vec, the total loss for the context window is:
 
 \begin{equation}
-J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m}, U) = \sum_{-m \leq j \leq m, j\ne 0} J(v_c, w_{t+j}, U)
+J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m}, U) = \sum_{\substack{-m \leq j \leq m \\ j\ne 0}} J(v_c, w_{t+j}, U)
 \end{equation}
 Here, $J(v_c, w_{t+j}, U)$ represents an arbitrary loss term for the center word $c = w_t$ and outside word $w_{t+j}$. $J(v_c, w_{t+j}, U)$ could be $J_{naive-softmax}(v_c, w_{t+j}, U)$ or $J{neg-sample}(v_c, w_{t+j}, U)$, depending on your implementation.
 
@@ -106,10 +114,10 @@ Write down three partial derivatives:
 Write your answers in terms of $\partial J(v_c, w_{t+j}, U)/\partial U$ and $\partial J(v_c, w_{t+j}, U)/\partial v_c$. This is very simple $-$ each solution should be one line.
 \bigbreak
 \noindent
-\textbf{Answer:}
+\textbf{Answer:} 
 \begin{align*}
-    \partial J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m})/\partial U &= \sum_{-m \leq j \leq m, j\ne 0} \frac{J(v_c, w_{t+j}, U)}{\partial U}\\
-    \partial J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m})/\partial v_c &= \sum_{-m \leq j \leq m, j\ne 0} \frac{J(v_c, w_{t+j}, U)}{\partial v_c}\\
+    \partial J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m})/\partial U &= \sum_{\substack{-m \leq j \leq m\\ j\ne 0}} \frac{J(v_c, w_{t+j}, U)}{\partial U}\\
+    \partial J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m})/\partial v_c &= \sum_{\substack{-m \leq j \leq m\\ j\ne 0}} \frac{J(v_c, w_{t+j}, U)}{\partial v_c}\\
     \partial J_{skip-gram}(v_c, w_{t-m}, \cdots, w_{t+m})/\partial w_c (w \ne c) &= 0
 \end{align*}
 
