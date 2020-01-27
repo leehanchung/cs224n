@@ -44,3 +44,64 @@
 ### (b)  (2 points)  A sentence containingnwords will be parsed in how many steps (in terms ofn)?  Brieflyexplain why.
 
 **Answer:** 2n steps. It takes n steps to move from buffer to stack, and n steps to map n dependency.
+
+### (e)  (12 points)
+
+**Answer:**
+
+dev UAS: 88.18
+
+test UAS: 88.75
+
+```Epoch 10 out of 10
+100%|██████████████████████████████████████████████████████████████| 1848/1848 [02:38<00:00, 11.63it/s] 
+Average Train Loss: 0.058193851781412315
+Evaluating on dev set
+1445850it [00:00, 26287694.09it/s]
+- dev UAS: 88.18
+New best dev UAS! Saving model.
+
+TESTING
+================================================================================
+Restoring the best model weights found on the dev set
+Final evaluation on test set
+2919736it [00:00, 38929664.83it/s]
+- test UAS: 88.75
+Done!
+``````
+
+### (f) (12 points)
+
+**Answer**:
+
+**(i)**
+
+Error type:  Verb Phrase Attachment Error•
+
+Incorrect dependency:  wedding -> fearing
+
+Correct dependency:  heading -> fearing
+
+**(ii)**
+
+Error type:  Coordination Attachment Error
+
+Incorrect dependency:  makes -> rescue
+
+Correct dependency:  rush -> rescue
+
+**(iii)**
+
+Error type:  Prepositional Phrase Attachment Error•
+
+Incorrect dependency:  named -> midland
+
+Correct dependency:  guy -> midland
+
+**(iv)**
+
+Error type:  Modifier Attachment Error•
+
+Incorrect dependency:  elements -> most
+
+Correct dependency:  crucial -> most
