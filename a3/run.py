@@ -24,6 +24,16 @@ parser = argparse.ArgumentParser(description='Train neural dependency parser in 
 parser.add_argument('-d', '--debug', action='store_true', help='whether to enter debug mode')
 args = parser.parse_args()
 
+### MY CODE HERE 
+### Added code to run training on the GPU 0 if available
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")  
+    print(f"Running on GPU {torch.cuda.get_device_name(0)}")
+else:
+    device = torch.device("cpu")
+    print("Running on the CPU")
+### END MY CODE
+
 # -----------------
 # Primary Functions
 # -----------------
@@ -52,8 +62,9 @@ def train(parser, train_data, dev_data, output_path, batch_size=1024, n_epochs=1
     ### Please see the following docs for support:
     ###     Adam Optimizer: https://pytorch.org/docs/stable/optim.html
     ###     Cross Entropy Loss: https://pytorch.org/docs/stable/nn.html#crossentropyloss
-
-
+   
+    optimizer = optim.Adam(parser.model.parameters())
+    loss_func = nn.CrossEntropyLoss()
 
     ### END YOUR CODE
 
@@ -106,9 +117,11 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
             ###      4) Take step with the optimizer
             ### Please see the following docs for support:
             ###     Optimizer Step: https://pytorch.org/docs/stable/optim.html#optimizer-step
-
-
-
+            
+            logits = parser.model.forward(train_x)
+            loss = loss_func(logits, train_y)
+            loss.backward()
+            optimizer.step()
 
             ### END YOUR CODE
             prog.update(1)
@@ -148,6 +161,7 @@ if __name__ == "__main__":
         os.makedirs(output_dir)
 
     train(parser, train_data, dev_data, output_path, batch_size=1024, n_epochs=10, lr=0.0005)
+    # train(parser, train_data.to(device), dev_data.to(device), output_path, batch_size=1024, n_epochs=10, lr=0.0005)
 
     if not debug:
         print(80 * "=")
