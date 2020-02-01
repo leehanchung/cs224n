@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 4
+CS224N 2019-20: Homework 4
 nmt.py: NMT Model
 Pencheng Yin <pcyin@cs.cmu.edu>
 Sahil Chopra <schopra8@stanford.edu>
+Vera Lin <veralin@stanford.edu>
 """
 
 import math
@@ -15,10 +16,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import nltk
+nltk.download('punkt')
 
 
 def pad_sents(sents, pad_token):
     """ Pad list of sentences according to the longest sentence in the batch.
+        The paddings should be at the end of each sentence.
     @param sents (list[list[str]]): list of sentences, where each sentence
                                     is represented as a list of words
     @param pad_token (str): padding token
@@ -31,10 +35,10 @@ def pad_sents(sents, pad_token):
     ### YOUR CODE HERE (~6 Lines)
 
 
+
     ### END YOUR CODE
 
     return sents_padded
-
 
 
 def read_corpus(file_path, source):
@@ -45,7 +49,7 @@ def read_corpus(file_path, source):
     """
     data = []
     for line in open(file_path):
-        sent = line.strip().split(' ')
+        sent = nltk.word_tokenize(line)
         # only append <s> and </s> to the target sentence
         if source == 'tgt':
             sent = ['<s>'] + sent + ['</s>']
