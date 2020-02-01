@@ -19,6 +19,24 @@ import torch.nn.functional as F
 import nltk
 nltk.download('punkt')
 
+# adding unittest
+import unittest
+
+
+class padsentsTest(unittest.TestCase):
+
+    def test_pad_sents(self):
+        sent1 = [['foo', 'bar'], ['foo', 'bar', 'foo', 'bar'], ['foo', 'bar', 'foo'], ['foo', 'bar'], ['foo', 'bar']]
+        pad1 = '<END>'
+        test1 = pad_sents(sent1, pad1)
+
+        self.assertTrue(min([len(s) for s in sent1]), 4)
+        self.assertTrue(max([len(s) for s in sent1]), 4)
+        self.assertTrue(len(test1), len(sent1))
+        self.assertTrue(test1, [['foo','bar','<END>','<END>'],['foo','bar','foo','bar'],['foo','bar','foo','<END>'],
+                                ['foo','bar','<END>','<END>'], ['foo','bar','<END>','<END>']])
+        self.assertTrue(sent1[0][-1], pad1)
+
 
 def pad_sents(sents, pad_token):
     """ Pad list of sentences according to the longest sentence in the batch.
@@ -34,7 +52,8 @@ def pad_sents(sents, pad_token):
 
     ### YOUR CODE HERE (~6 Lines)
 
-
+    max_len = max([len(sent) for sent in sents])
+    sents_padded = [sent + [pad_token] * (max_len - len(sent)) for sent in sents]
 
     ### END YOUR CODE
 
@@ -80,3 +99,5 @@ def batch_iter(data, batch_size, shuffle=False):
 
         yield src_sents, tgt_sents
 
+if __name__ == "__main__":
+    unittest.main()
