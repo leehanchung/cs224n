@@ -2,28 +2,27 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 4
+CS224N 2019-20: Homework 4
 sanity_check.py: sanity checks for assignment 4
 Sahil Chopra <schopra8@stanford.edu>
 Michael Hahn <>
+Vera Lin <veralin@stanford.edu>
+
+If you are a student, please don't run overwrite_output_for_sanity_check as it will overwrite the correct output!
 
 Usage:
     sanity_check.py 1d
     sanity_check.py 1e
     sanity_check.py 1f
-
+    sanity_check.py overwrite_output_for_sanity_check
 """
-import math
 import sys
-import pickle
-import time
 
 import numpy as np
 
 from docopt import docopt
-from typing import List, Tuple, Dict, Set, Union
-from tqdm import tqdm
-from utils import read_corpus, batch_iter
+from utils import batch_iter
+from utils import read_corpus
 from vocab import Vocab, VocabEntry
 
 from nmt_model import NMT
@@ -63,6 +62,8 @@ def generate_outputs(model, source, target, vocab):
     print ("-"*80)
     print("Generating Comparison Outputs")
     reinitialize_layers(model)
+    model.gen_sanity_check = True
+    model.counter = 0
 
     # Compute sentence lengths
     source_lengths = [len(s) for s in source]
@@ -82,7 +83,22 @@ def generate_outputs(model, source, target, vocab):
     torch.save(dec_init_state, './sanity_check_en_es_data/dec_init_state.pkl') 
     torch.save(enc_masks, './sanity_check_en_es_data/enc_masks.pkl')
     torch.save(combined_outputs, './sanity_check_en_es_data/combined_outputs.pkl')
+    torch.save(target_padded, './sanity_check_en_es_data/target_padded.pkl')
 
+    # 1f
+    # Inputs
+    Ybar_t = torch.load('./sanity_check_en_es_data/Ybar_t.pkl')
+    enc_hiddens_proj = torch.load('./sanity_check_en_es_data/enc_hiddens_proj.pkl')
+    reinitialize_layers(model)
+    # Run Tests
+    with torch.no_grad():
+        dec_state_target, o_t_target, e_t_target = model.step(Ybar_t, dec_init_state, enc_hiddens, enc_hiddens_proj,
+                                                        enc_masks)
+    torch.save(dec_state_target, './sanity_check_en_es_data/dec_state.pkl')
+    torch.save(o_t_target, './sanity_check_en_es_data/o_t.pkl')
+    torch.save(e_t_target, './sanity_check_en_es_data/e_t.pkl')
+
+    model.gen_sanity_check = False
 
 def question_1d_sanity_check(model, src_sents, tgt_sents, vocab):
     """ Sanity check for question 1d. 
@@ -130,6 +146,7 @@ def question_1e_sanity_check(model, src_sents, tgt_sents, vocab):
 
     # Load Outputs
     combined_outputs_target = torch.load('./sanity_check_en_es_data/combined_outputs.pkl')
+    print(combined_outputs_target.shape)
 
     # Configure for Testing
     reinitialize_layers(model)
@@ -194,7 +211,7 @@ def main():
 
     # Check Python & PyTorch Versions
     assert (sys.version_info >= (3, 5)), "Please update your installation of Python to version >= 3.5"
-    assert(torch.__version__ == "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
+    assert(torch.__version__ >= "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
 
     # Seed the Random Number Generators
     seed = 1234
@@ -225,8 +242,9 @@ def main():
     elif args['1e']:
         question_1e_sanity_check(model, src_sents, tgt_sents, vocab)
     elif args['1f']:
-       # generate_outputs(model, src_sents, tgt_sents, vocab)
         question_1f_sanity_check(model, src_sents, tgt_sents, vocab)
+    elif args['overwrite_output_for_sanity_check']:
+        generate_outputs(model, src_sents, tgt_sents, vocab)
     else:
         raise RuntimeError('invalid run mode')
 

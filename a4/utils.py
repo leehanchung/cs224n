@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 4
+CS224N 2019-20: Homework 4
 nmt.py: NMT Model
 Pencheng Yin <pcyin@cs.cmu.edu>
 Sahil Chopra <schopra8@stanford.edu>
+Vera Lin <veralin@stanford.edu>
 """
 
 import math
@@ -15,10 +16,31 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import nltk
+nltk.download('punkt')
+
+# adding unittest
+import unittest
+
+
+class padsentsTest(unittest.TestCase):
+
+    def test_pad_sents(self):
+        sent1 = [['foo', 'bar'], ['foo', 'bar', 'foo', 'bar'], ['foo', 'bar', 'foo'], ['foo', 'bar'], ['foo', 'bar']]
+        pad1 = '<END>'
+        test1 = pad_sents(sent1, pad1)
+
+        self.assertTrue(min([len(s) for s in sent1]), 4)
+        self.assertTrue(max([len(s) for s in sent1]), 4)
+        self.assertTrue(len(test1), len(sent1))
+        self.assertTrue(test1, [['foo','bar','<END>','<END>'],['foo','bar','foo','bar'],['foo','bar','foo','<END>'],
+                                ['foo','bar','<END>','<END>'], ['foo','bar','<END>','<END>']])
+        self.assertTrue(sent1[0][-1], pad1)
 
 
 def pad_sents(sents, pad_token):
     """ Pad list of sentences according to the longest sentence in the batch.
+        The paddings should be at the end of each sentence.
     @param sents (list[list[str]]): list of sentences, where each sentence
                                     is represented as a list of words
     @param pad_token (str): padding token
@@ -30,11 +52,12 @@ def pad_sents(sents, pad_token):
 
     ### YOUR CODE HERE (~6 Lines)
 
+    max_len = max([len(sent) for sent in sents])
+    sents_padded = [sent + [pad_token] * (max_len - len(sent)) for sent in sents]
 
     ### END YOUR CODE
 
     return sents_padded
-
 
 
 def read_corpus(file_path, source):
@@ -45,7 +68,7 @@ def read_corpus(file_path, source):
     """
     data = []
     for line in open(file_path):
-        sent = line.strip().split(' ')
+        sent = nltk.word_tokenize(line)
         # only append <s> and </s> to the target sentence
         if source == 'tgt':
             sent = ['<s>'] + sent + ['</s>']
@@ -76,3 +99,5 @@ def batch_iter(data, batch_size, shuffle=False):
 
         yield src_sents, tgt_sents
 
+if __name__ == "__main__":
+    unittest.main()

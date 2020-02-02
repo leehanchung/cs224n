@@ -23,7 +23,9 @@ Implemented and trained word2vec in Numpy.
 ![word_vectors](./a2/word_vectors.png)
 
 
-## Assignment 3
+## Assignment 3 :heavy_check_mark:
+
+### [Written and Coding](./a3/README.md)
 
 
 ## Assignment 4

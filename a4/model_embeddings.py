@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 4
+CS224N 2019-20: Homework 4
 model_embeddings.py: Embeddings for the NMT model
 Pencheng Yin <pcyin@cs.cmu.edu>
 Sahil Chopra <schopra8@stanford.edu>
 Anand Dhoot <anandd@stanford.edu>
+Vera Lin <veralin@stanford.edu>
 """
 
 import torch.nn as nn
@@ -50,7 +51,9 @@ class ModelEmbeddings(nn.Module):
         ### Use the following docs to properly initialize these variables:
         ###     Embedding Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding
-        
+
+        self.source = nn.Embedding(len(vocab.src), embed_size, padding_idx=src_pad_token_idx)
+        self.target = nn.Embedding(len(vocab.tgt), embed_size, padding_idx=tgt_pad_token_idx)
 
         ### END YOUR CODE
 
