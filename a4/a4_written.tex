@@ -1,0 +1,313 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{enumerate}
+\usepackage{amsmath} 
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{amsmath,amsfonts,amssymb, hyperref}
+
+\title{Stanford CS 224n Assignment 4}
+\author{Hanchung Lee}
+\date{February 4, 2020}
+\begin{document}
+
+\maketitle
+\section{Neural Machine Translation with RNNs (45 points)}
+In Machine Translation, our goal is to convert a sentence from the source language (e.g.  Spanish) to the target language (e.g.  English). In this assignment, we will implement a sequence-to-sequence (Seq2Seq)network with attention, to build a Neural Machine Translation  (NMT)  system. In this  section, we describe the training procedure for the proposed NMT system, which uses a Bidirectional LSTM Encoder and a Unidirectional LSTM Decoder.
+
+\bigbreak
+(g)  (3 points)  (written) The \verb|generate_sent_masks()| function in \verb|nmt_model.py| produces a tensor called \verb|enc_masks|. It has shape (batch size, max source sentence length) and contains 1s in positions corresponding to ‘pad’ tokens in the input, and 0s for non-pad tokens.  Look at how the masks are used during the attention computation in the \verb|step()| function (lines 295-296). First explain (in around three sentences) what effect the masks have on the entire attention computation. Then explain (in one or two sentences) why it is necessary to use the masks in this way.
+\smallbreak
+\textbf{Answer:} The input sentences are padded to equal lengths with a token that contains no information. Thus a mask is used to mark the locations of the padding. The \verb|step()| function sets the padded locations in the attention vector $e_t$ to $-\inf$ to zero out those locations in the attention distribution $\alpha_t$ after calculation.
+
+\bigbreak
+(i) (4 points)  Once your model is done training (this should take about 4 hours on the VM),execute the following command to test the model: \verb|sh run.sh test|. Please report the model’s corpus BLEU Score.  It should be larger than 21
+\smallbreak
+\textbf{Answer:} We left the model training locally on RTX 2080 Ti overnight. It hit early stopping at epoch 14. Test Corpus BLEU is 35.89
+
+\bigbreak
+(j) (3 points)  (written) In class, we learned about dot product attention, multiplicative attention, and additive attention.  Please explain one advantage and one disadvantage of dot product attention compared to multiplicative attention.  Then explain one advantage and one disadvantage of additive attention compared to multiplicative attention.  As a reminder, dot product attention is $e_{t,i}=s_t^\intercal h_i$, multiplicative attention is $e_{t,i}=s_t^\intercal W hi$, and additive attention is $e_{t,i}=v^{\Intercal}\tanh{(W_1h_i+W_2s_t)}$
+\smallbreak
+\textbf{Answer:}
+\begin{center}
+\begin{tabular}{ |l|l|l| } 
+ \hline
+  & \textbf{Advantages} & \textbf{Disadvantages} \\ 
+ \hline
+ Dot Product & Simple, easy to calculate. No extra $w$ variables & Assumes $s_t$ and $h_i$ in same dimension. \\ 
+  & No extra $w$ variables & Returns a scalar thus less information  \\ 
+ \hline
+ Multiplicative & $s_t$ and $h_i$ don't have to be in same dimension. & Costly in high dimension \\
+  & more representation than dot product & New $W$ parameter \\ 
+ \hline
+ Additive & Similar computational complexity as Multiplicative & $W_1$ and $W_2$ parameters \\ 
+  & Better computational efficiency in high dimensions & Dimension is another hyperparameter. \\ 
+\hline
+\end{tabular}
+\end{center}
+Reference: \href{https://ruder.io/deep-learning-nlp-best-practices/index.html#attention}{Sebatian Ruder's blog post} and \href{https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html#a-family-of-attention-mechanisms}{Lilian Weng's blog post}
+\bigbreak
+
+
+\section{Analyzing NMT Systems (30 points)}
+
+(a) (12 points)  Here we present a series of errors we found in the outputs of our NMT model (which is the same as the one you just trained).  For each example of a Spanish source sentence, reference(i.e., ‘gold’) English translation, and NMT (i.e., ‘model’) English translation, please:
+    \begin{enumerate}
+        \item Identify the error in the NMT translation.
+        \item Provide possible reason(s) why the model may have made the error (either due to a specific linguistic construct or a specific model limitation).
+        \item Describe one possible way we might alter the NMT system to fix the observed error.  There are more than one possible fixes for an error.  For example, it could be tweaking the size of the hidden layers or changing the attention mechanism. 
+    \end{enumerate}
+
+    Below are the translations that you should analyze as described above.  Note that out-of-vocabulary words are underlined.  Rest assured that you don’t need to know Spanish to answer these questions. You just need to know English!  The Spanish words in these questions are similar enough to English that you can mostly see the alignments.  If you are uncertain about some words, please feel free touse resources like Google Translate to look them up.
+    
+    \begin{enumerate}[i]
+        \item (2 points) \textbf{Source Sentence:} \textit{Aqu ́ı otro de mis favoritos, “La noche estrellada".} \newline  \textbf{Reference Translation}: \textit{So another one of my favorites, “The Starry Night”.} \newline \textbf{NMT Translation:} \textit{Here’s another favorite of my favorites, “The Starry Night”.}
+        
+        \smallbreak
+        \textbf{Answer:} \newline Error: \textit{favorite of my favorites.}\newline Reason: Model limitations?\newline Fix: More training data of similar sentence structures.
+        
+        \item (2 points) \textbf{Source Sentence:} \textit{Ustedes saben que lo que yo hago es escribir para los ni ̃nos,  y ,de hecho, probablemente soy el autor para ni ̃nos, ms ledo en los EEUU.}\newline \textbf{Reference Translation:}\textit{ You know, what I do is write for children, and I’m probably America’s most widely read children’s author, in fact.}\newline \textbf{NMT Translation:} \textit{You know what I do is write for children, and in fact, I’m probably the author for children, more reading in the U.S.}
+        \smallbreak
+        \textbf{Answer:} \newline Error: \textit{more reading in the US} didnt capture the relationships.\newline Reason: Model limitation. It didn't capture relationships between punctuation fragments and directly translates phrase \textit{ms ledo en los EEUU} into \textit{more reading in the US}\newline Fix: Increase size of hidden units. More training data of similar sentence structures.
+        
+        \item (2 points) \textbf{Source Sentence:}\textit{Un amigo me hizo eso – Richard Bolingbroke.}\newline\textbf{Reference Translation:}\textit{A friend of mine did that – Richard Bolingbroke.}\newline \textbf{NMT Translation:}\textit{A friend of mine did that – Richard<unk>}
+        
+        \textbf{Answer:} \newline Error: model fail to remember \textit{Bolingbroke}.\newline Reason: Embedding size too small and truncated infrequent word relationships. \newline Fix: Make embedding size larger to include \textit{Bolingbroke} into the dictionary.
+        
+        \item (2 points) \textbf{Source Sentence:} \textit{Solo  tienes  que  dar  vuelta  a  la  manzana  para  verlo  como  unaepifan ́ıa.}\newline \textbf{Reference Translation:} \textit{You’ve just got to go around the block to see it as an epiphany.} \newline \textbf{NMT Translation:} \textit{You just have to go back to the apple to see it as an epiphany.}
+        
+        \textbf{Answer:} \newline Error: \textit{go around the block} mistranslated as \textit{go back to the apple}.\newline Reason: \textit{manzana}  is a homonym that means either \textit{apple} or \textit{block}. Probably not enough training samples with \textit{manzana} as \textit{block}. \newline Fix: include more training samples where \textit{manzana} is translated as \textit{block}.
+        
+        \item (2 points) \textbf{Source Sentence:}\textit{Ella  salv ́o  mi  vida  al  permitirme  entrar  al  ba ̃no  de  la  sala  de profesores.}\newline \textbf{Reference Translation:}\textit{She saved my life by letting me go to the bathroom in the teachers’ lounge.}\newline \textbf{NMT Translation:} \textit{She saved my life by letting me go to the bathroom in the women’s room.}
+        
+        \textbf{Answer:} \newline Error: \textit{teachers' lounge} mistranslated as \textit{women's room}.\newline Reason: bias in training sample data that doesn't have enough training samples with pairs of \textit{ella} associating with \textit{profesores} \newline Fix: include more gender unbiased data into the training set.
+        
+        \item  (2 points) \textbf{Source Sentence:}\textit{Eso es m ́as de 100,000 hect ́areas.}\newline \textbf{Reference Translation:}\textit{That’s more than 250 thousand acres.}\newline \textbf{NMT Translation:}\textit{That’s over 100,000 acres.}
+        
+        \textbf{Answer:} \newline Error: accounting unit error, doesn't translate from \textit{100,00 hect areas} into \textit{250 thousand acres.} \newline Reason: model limitations makes it hard to translate across different numbering schemes and accounting units. \newline Fix: more training data regarding simple arithmetics and unit conversions.  flattening out the numbering schemes in training samples, e.g., instead of \textit{250 thousand}, do \textit{250,000}. But even then, not sure how well will the model capture basic logic and arithmetic relationships.
+    \end{enumerate}
+    \bigbreak
+    \bigbreak
+\noindent
+(b)  (4 points)  Now it is time to explore the outputs of the model that you have trained!  The test-set translations your model produced in question 1-i should be located in \verb|outputs/testoutputs.txt|.Please identify \textbf{2 examples} of errors that your model produced. The two examples you find should be different error types from one another and different error types than the examples provided in the previous question.  For each example you should: 
+\begin{enumerate}
+    \item Write the source sentence in Spanish.  The source sentences are in the \verb|enesdata/test.es|.
+    \item Write the reference English translation. The reference translations are in the \verb|enesdata/test.en|.
+    \item Write  your  NMT  model’s  English  translation.    The  model-translated  sentences  are  in  the \verb|outputs/testoutputs.txt|.
+    \item Identify the error in the NMT translation.
+    \item Provide a reason why the model may have made the error (either due to a specific linguistic construct or specific model limitations).
+    \item Describe one possible way we might alter the NMT system to fix the observed error
+\end{enumerate}
+
+\noindent
+\textbf{Answer:}
+\begin{enumerate}[i]
+    \item \textbf{Source}: \textit{Aqu lo tienen.} \newline \textbf{Reference:} \textit{So here it is} \newline \textbf{NMT Translation}: \textit{Here you have} \newline \textbf{Error}: Missing pronoun \textit{it}. \newline \textbf{Reason:} model limitation, language construction. \newline \textbf{Fix:} More training samples these super short languages.
+    \item \textbf{Source}: \textit{y tuve que irme de la ciudad.} \newline \textbf{Reference:} \textit{And I had to get out of town.} \newline \textbf{NMT Translation}: \textit{And I had to go from the city.} \newline \textbf{Error}: idioms/linguistic construct, \textit{que irme de la ciudadd} literal translates to \textit{go from the city} but is not \textit{get out of town}. \newline \textbf{Reason:} model limitation, language construction. \newline \textbf{Fix:} Not sure. Perhaps including more idioms from both English and Spanish will help.
+\end{enumerate}
+
+\noindent
+(c) (14 points)  BLEU score is the most commonly used automatic evaluation metric for NMT systems. It is usually calculated across the entire test set, but here we will consider BLEU defined for a single example. Suppose we have a source sentences, a set of $k$ reference translations $r_1,...,r_k$, and a candidate translation $c$. To compute the BLEU score of $c$, we first compute the \textit{modified n-gram precision $p_n$} of c, for each of $n = 1,2,3,4$, where $n$ is the $n$ in $n$-gram:
+\smallbreak
+$$p_n = \frac{\sum_{ngram\in{c}}^{} \min(\max_{i=1,...,k} Count_{r_i}(ngram), Count_c(ngram))}{\sum_{ngram\in{c}}Count_c(ngram)}$$
+\smallbreak
+Here, for each of the n-grams that appear in the candidate translation $c$, we count the maximum number of times it appears in any one reference translation, capped by the number of times it appears in $c$ (this is the numerator).  We divide this by the number of $n$-grams in $c$ (denominator).
+\smallbreak
+Next, we compute the \textit{brevity  penalty} BP. Let \textit{len(c)} be the length of $c$ and let \textit{len(r)} be the length of the reference translation that is closest to \textit{len(c)} (in the case of two equally-close reference translation lengths, choose \textit{len(r)} as the shorter one).
+\smallbreak
+\[
+    BP= 
+\begin{cases}
+    1, & \text{if } len(c) \geq len(r)\\
+    \exp{(1 - \frac{len(r)}{len(c)})}, & \text{otherwise}
+\end{cases}
+\]
+\smallbreak
+Lastly, the BLEU score for candidate $c$ with respect to $r_1,...,r_k$ is:
+$$BLEU = BP \exp(\sum_{n=1}^{4} \lambda_n\log p_n)$$
+where $\lambda_1, \lambda_2, \lambda_3, \lambda_4$ are weights that sum to 1.  The log here is natural log.
+
+\begin{enumerate}[i]
+    \item (5 points)  Please consider this example: \newline Source Sentences: el amor todo lo puede \newline Reference Translation $r_1$: love can always find a way \newline Reference Translation $r_2$: love makes anything possible \newline NMT Translation $c_1$: the love can always do \newline NMT Translation $c_2$: love can make anything possible \newline Please compute the BLEU scores for $c_1$ and $c_2$. Let $\lambda_i = 0.5$  for $i \in {1,2}$ and $\lambda_i = 0$ for $i \in {3,4}$ (this means we ignore 3-grams and 4-grams, i.e., don’t compute $p_3$ or $p_4$). When computing BLEU scores, show your working (i.e., show your computed values for $p_1$, $p_2$, \textit{len(c)}, \textit{len(r)} and \textit{BP}).  Note that the BLEU scores can be expressed between 0 and 1 or between 0 and 100.  The code is using the 0 to 100 scale while in this question we are using the 0 to 1 scale. Which of the two NMT translations is considered the better translation according to the BLEU score?  Do you agree that it is the better translation?
+    
+    \textbf{Answer:} 
+    \newline 
+    \begin{center}
+    \begin{tabular}{ ll }
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{Unigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    the  & 0 \\ 
+    \hline
+    love  & 1 \\ 
+    \hline
+    can & 1 \\
+    \hline
+    always & 1 \\ 
+    \hline
+    do & 0 \\ 
+    \hline
+    \end{tabular}
+    &
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{bigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    the love & 0 \\ 
+    \hline
+    love can & 1 \\ 
+    \hline
+    can always & 1 \\
+    \hline
+    always do & 0 \\ 
+    \hline
+    \end{tabular}
+    \end{tabular}
+    \end{center}
+    
+    $c_1$: $p_1$ = 0.6, $p_2$ = 0.5, $len(c)$ = 5, $len(r)$ = 4. $BP$ = 1.
+    \newline
+    \textbf{BLEU $c_1$} = \verb|np.exp(0.5*np.log(0.65) + 0.5*np.log(0.5))| = \textbf{0.5477}
+    
+    \begin{center}
+    \begin{tabular}{ ll }
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{Unigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    love  & 1 \\
+    \hline
+    can  & 1 \\
+    \hline
+    make & 0 \\
+    \hline
+    anything & 1 \\ 
+    \hline
+    possible & 1 \\ 
+    \hline
+    \end{tabular}
+    &
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{bigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    love can & 1 \\ 
+    \hline
+    can make & 0 \\ 
+    \hline
+    make anything & 0 \\
+    \hline
+    anything possible & 1 \\ 
+    \hline
+    \end{tabular}
+    \end{tabular}
+    \end{center}
+    
+    $c_2$: $p_1$ = 0.8, $p_2$ = 0.5, $len(c)$ = 5, $len(r)$ = 4. $BP$ = 1. 
+    \newline
+    \textbf{BLEU $c_2$} = \verb|np.exp(0.5*np.log(0.8) + 0.5*np.log(0.5))| = \textbf{0.6324}
+    
+    \textbf{According to BLEU score, $c_2$ is a better translation. And I agree with the score.}
+    
+    \item (5 points)  Our hard drive was corrupted and we lost Reference Translation $r_2$.  Please recompute BLEU scores for $c_1$ and $c_2$, this time with respect to $r_1$ only.  Which of the two NMT translations now receives the higher BLEU score?  Do you agree that it is the better translation?
+    
+    \textbf{Answer:} \newline 
+    \begin{center}
+    \begin{tabular}{ ll }
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{Unigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    the  & 0 \\ 
+    \hline
+    love  & 1 \\ 
+    \hline
+    can & 1 \\
+    \hline
+    always & 1 \\ 
+    \hline
+    do & 0 \\ 
+    \hline
+    \end{tabular}
+    &
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{bigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    the love & 0 \\ 
+    \hline
+    love can & 1 \\ 
+    \hline
+    can always & 1 \\
+    \hline
+    always do & 0 \\ 
+    \hline
+    \end{tabular}
+    \end{tabular}
+    \end{center}
+    
+    $c_1$: $p_1$ = 0.6, $p_2$ = 0.5, $len(c)$ = 5, $len(r)$ = 6. $BP$ = \verb|np.exp(1-6/5)| = 0.8187. 
+    \newline
+    \textbf{BLEU $c_1$} = \verb|np.exp(1-6/5) * np.exp(0.5*np.log(0.65) + 0.5*np.log(0.5))| = \textbf{0.4484}
+    
+    \begin{center}
+    \begin{tabular}{ ll }
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{Unigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    love  & 1 \\
+    \hline
+    can  & 1 \\
+    \hline
+    make & 0 \\
+    \hline
+    anything & 0 \\ 
+    \hline
+    possible & 0 \\ 
+    \hline
+    \end{tabular}
+    &
+    \begin{tabular}{ |l|l| }
+    \hline
+    \textbf{bigram} & \textbf{$\max(Count_{r_i}, Count_c)$} \\ 
+    \hline
+    love can & 1 \\ 
+    \hline
+    can make & 0 \\ 
+    \hline
+    make anything & 0 \\
+    \hline
+    anything possible & 0 \\
+    \hline
+    \end{tabular}
+    \end{tabular}
+    \end{center}
+    
+    $c_2$: $p_1$ = 0.4, $p_2$ = 0.25, $len(c)$ = 5, $len(r)$ = 6. $BP$ = \verb|np.exp(1-6/5)| = 0.8187. 
+    \newline 
+    \textbf{BLEU $c_2$} = \verb|np.exp(1-6/5) * np.exp(0.5*np.log(0.4) + 0.5*np.log(0.25))| = \textbf{0.2589}
+    
+    \textbf{According to BLEU score, $c_1$ is a better translation. And I disagree with the score.}
+    
+    \item (2 points)  Due to data availability, NMT systems are often evaluated with respect to only a single reference translation.  Please explain (in a few sentences) why this may be problematic.
+    
+    \textbf{Answer:} With only a single reference, good translations might receive a low BLEU score due to little n-gram overlaps. With more reference sentences, the target space increases with more n-grams available for the model to generate and receive a good BLEU score.
+    
+    \item (2 points)  List two advantages and two disadvantages of BLEU, compared to human evaluation, as an evaluation metric for Machine Translation
+    
+    \textbf{Answer:} \newline \textbf{advantages:} \begin{enumerate}[1]
+        \item Fully automated and quantitative evaluation, faster than human.
+        \item Simple and easy implementation. Human evaluation would have to understand both source and target languages.
+    \end{enumerate}
+    \textbf{disadvantages:} 
+    \begin{enumerate}[1]
+        \item Only measures n-gram overlaps, not quality of the sentences produced.
+        \item Not measuring semantics, log, grammar, etc
+    \end{enumerate}
+
+
+\end{enumerate}
+\end{document}
