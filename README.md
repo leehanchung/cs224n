@@ -8,7 +8,7 @@ Self study on Stanford CS 224n, Winter 2020.
 
 [Lecture notes, CS 224n, Winter 2019](./notes)
 
-Special thanks to Stanford, Professor. Manning for making this great resources online and free to the public.
+Special thanks to Stanford and Professor Chris Manning for making this great resources online and free to the public.
 
 ## Assignment 1 :heavy_check_mark:
 Constructed count vectorized embeddings using co-occurance matrix and used Gensim word2vec to study predictions and language biases.
@@ -28,7 +28,7 @@ Coding: [Implementing word2vec](./a2/README.md)
 [Written and Coding](./a3/README.md)
 
 
-## Assignment 4# :heavy_check_mark:
+## Assignment 4 :heavy_check_mark:
 
 Coding: [Neural Machine Translation with RNN](./a4/README.md)
 
