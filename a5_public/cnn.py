@@ -2,11 +2,19 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 5
+CS224N 2019-20: Homework 5
 """
 
-### YOUR CODE HERE for part 1i
+import torch
+import torch.nn as nn
+
+class CNN(nn.Module):
+    pass
+    # Remember to delete the above 'pass' after your implementation
+    ### YOUR CODE HERE for part 1g
 
 
-### END YOUR CODE
+
+
+    ### END YOUR CODE
 
