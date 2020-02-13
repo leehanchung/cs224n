@@ -45,8 +45,10 @@ class DummyVocab():
     def __init__(self):
         self.char2id = json.load(open('./sanity_check_en_es_data/char_vocab_sanity_check.json', 'r'))
         self.id2char = {id: char for char, id in self.char2id.items()}
-        self.char_pad = self.char2id['∏']
-        self.char_unk = self.char2id['Û']
+        # self.char_pad = self.char2id['∏']
+        self.char_pad = self.char2id['<pad>']
+        # self.char_unk = self.char2id['Û']
+        self.char_unk = self.char2id['<unk>']
         self.start_of_word = self.char2id["{"]
         self.end_of_word = self.char2id["}"]
 
@@ -139,7 +141,7 @@ def main():
     """ Main func.
     """
     args = docopt(__doc__)
-
+    print(asdf)
     # Check Python & PyTorch Versions
     assert (sys.version_info >= (3, 5)), "Please update your installation of Python to version >= 3.5"
     assert(torch.__version__ >= "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)

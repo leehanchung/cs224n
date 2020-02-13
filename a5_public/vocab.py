@@ -52,14 +52,18 @@ class VocabEntry(object):
             """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]""")
 
         self.char2id = dict()  # Converts characters to integers
-        self.char2id['∏'] = 0  # <pad> token
+        # self.char2id['∏'] = 0  # <pad> token
+        self.char2id['<pad>'] = 0  # <pad> token
         self.char2id['{'] = 1  # start of word token
         self.char2id['}'] = 2  # end of word token
-        self.char2id['Û'] = 3  # <unk> token
+        # self.char2id['Û'] = 3  # <unk> token
+        self.char2id['<unk>'] = 3  # <unk> token
         for i, c in enumerate(self.char_list):
             self.char2id[c] = len(self.char2id)
-        self.char_pad = self.char2id['∏']
-        self.char_unk = self.char2id['Û']
+        # self.char_pad = self.char2id['∏']
+        self.char_pad = self.char2id['<pad>']
+        # self.char_unk = self.char2id['Û']
+        self.char_unk = self.char2id['<unk>']
         self.start_of_word = self.char2id["{"]
         self.end_of_word = self.char2id["}"]
         assert self.start_of_word + 1 == self.end_of_word
@@ -160,6 +164,15 @@ class VocabEntry(object):
         ###     - You may find .contiguous() useful after reshaping. Check the following links for more details:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.contiguous
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
+
+        idx = self.words2charindices(sents)
+        # (batch_size, max_sentence_length, max_word_length)
+        padded_idx =  pad_sents_char(sents=idx,
+                                     char_pad_token=self.char2id['<pad>'])
+        # list -> tensor. Swap axis 0 and 1. (max_sentence_length, batch_size, max_word_length)                      
+        sents_var = torch.Tensor(padded_idx,
+                                 device=device).permute(1, 0, 2).contiguous()
+        return sents_var
 
         ### END YOUR CODE
 
