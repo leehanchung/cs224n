@@ -41,6 +41,10 @@ def initialize_layers(model: nn.Module):
             m.weight.data.fill_(0.5)
             if m.bias is not None:
                 m.bias.data.fill_(0.5)
+        elif type(m) == nn.Conv1d:
+            m.weight.data.fill_(0.5)
+            if m.bias is not None:
+                m.bias.data.fill_(0.5)
         elif type(m) == nn.Embedding:
             m.weight.data.fill_(0.15)
         elif type(m) == nn.Dropout:
@@ -52,14 +56,13 @@ def initialize_layers(model: nn.Module):
 
 class TestHighway(unittest.TestCase):
     """ 
-    Sanity check for Highway.forward()
-    basic shape check
+    Sanity check for Highway module
     """
     def setUp(self):
-        self.emb_size = EMBED_SIZE
-        self.model = Highway(emb_size=EMBED_SIZE)
+        self.word_emb_size = EMBED_SIZE
+        self.model = Highway(word_emb_size=EMBED_SIZE)
 
-    def test_shape(self):
+    def test_Highway_shape(self):
         self.model = initialize_layers(self.model)
         
         input = torch.zeros(BATCH_SIZE, EMBED_SIZE)
@@ -71,7 +74,7 @@ class TestHighway(unittest.TestCase):
         self.assertEqual(self.model.gate.in_features, EMBED_SIZE, "incorrect gate layer input size")
         self.assertEqual(self.model.gate.out_features, EMBED_SIZE, "incorrect gate layer output size")
     
-    def test_forward(self):
+    def test_Highway_forward(self):
         
         def generate_data():
             """
@@ -107,26 +110,7 @@ class TestHighway(unittest.TestCase):
 
         self.assertEqual(test_output.shape, output.shape, "incorrect output shape")
         self.assertTrue(np.allclose(test_output.numpy(), output.numpy()), "output values not close to equal")
-  
 
-class TestCNN(unittest.TestCase):
-
-    def question_1g_sanity_check(model):
-        """ Sanity check for model_embeddings.py
-            basic shape check
-        """
-        print ("-"*80)
-        print("Running Sanity Check for Question 1h: Model Embedding")
-        print ("-"*80)
-        sentence_length = 10
-        max_word_length = 21
-        inpt = torch.zeros(sentence_length, BATCH_SIZE, max_word_length, dtype=torch.long)
-        ME_source = model.model_embeddings_source
-        output = ME_source.forward(inpt)
-        output_expected_size = [sentence_length, BATCH_SIZE, EMBED_SIZE]
-        assert(list(output.size()) == output_expected_size), "output shape is incorrect: it should be:\n {} but is:\n{}".format(output_expected_size, list(output.size()))
-        print("Sanity Check Passed for Question 1h: Model Embedding!")
-        print("-"*80)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

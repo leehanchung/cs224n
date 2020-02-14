@@ -9,25 +9,26 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class Highway(nn.Module):
     # Remember to delete the above 'pass' after your implementation
     ### YOUR CODE HERE for part 1f
     """
     Highway Layer for combining outputs of Conv1D and skip connection
     """
-    def __init__(self, emb_size: int):
+    def __init__(self, word_emb_size: int):
         """
         Initialize two linear layers with bias.
 
         @param emb_size (int): word embedding size. e_{word} in project assignment.
         """
         super(Highway, self).__init__()
-        self.emb_size = emb_size
-        self.proj = nn.Linear(in_features=self.emb_size,
-                              out_features=self.emb_size,
+        self.word_emb_size = word_emb_size
+        self.proj = nn.Linear(in_features=self.word_emb_size,
+                              out_features=self.word_emb_size,
                               bias=True)
-        self.gate = nn.Linear(in_features=self.emb_size,
-                              out_features=self.emb_size,
+        self.gate = nn.Linear(in_features=self.word_emb_size,
+                              out_features=self.word_emb_size,
                               bias=True)
 
     def forward(self, X_conv_out: torch.Tensor) -> torch.Tensor:

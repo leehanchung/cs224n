@@ -169,9 +169,11 @@ class VocabEntry(object):
         # (batch_size, max_sentence_length, max_word_length)
         padded_idx =  pad_sents_char(sents=idx,
                                      char_pad_token=self.char2id['<pad>'])
-        # list -> tensor. Swap axis 0 and 1. (max_sentence_length, batch_size, max_word_length)                      
-        sents_var = torch.Tensor(padded_idx,
-                                 device=device).permute(1, 0, 2).contiguous()
+        # list -> tensor. Swap axis 0 and 1. (max_sentence_length, batch_size, max_word_length)
+        # added dtype=torch.long. pytorch complains at 1j training time.
+        sents_var = torch.tensor(padded_idx,
+                                 dtype=torch.long,
+                                 device=device).permute(1, 0, 2)
         return sents_var
 
         ### END YOUR CODE

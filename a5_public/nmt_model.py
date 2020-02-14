@@ -50,7 +50,29 @@ class NMT(nn.Module):
         self.vocab = vocab
 
         ### COPY OVER YOUR CODE FROM ASSIGNMENT 4
-
+        self.encoder = nn.LSTM(input_size=word_embed_size,
+                               hidden_size=self.hidden_size,
+                               bias=True,
+                               bidirectional=True)
+        self.decoder = nn.LSTMCell(input_size=word_embed_size+self.hidden_size,
+                                   hidden_size=self.hidden_size,
+                                   bias=True)
+        self.h_projection = nn.Linear(in_features=self.hidden_size * 2,
+                                      out_features=self.hidden_size,
+                                      bias=False)
+        self.c_projection = nn.Linear(in_features=self.hidden_size * 2,
+                                      out_features=self.hidden_size,
+                                      bias=False)
+        self.att_projection = nn.Linear(in_features=self.hidden_size * 2,
+                                        out_features=self.hidden_size,
+                                        bias=False)
+        self.combined_output_projection = nn.Linear(in_features=self.hidden_size * 3,
+                                                    out_features=self.hidden_size,
+                                                    bias=False)
+        self.target_vocab_projection = nn.Linear(in_features=self.hidden_size,
+                                                 out_features=len(vocab.tgt),
+                                                 bias=False)
+        self.dropout = nn.Dropout(self.dropout_rate)
         ### END YOUR CODE FROM ASSIGNMENT 4
 
         if not no_char_decoder:
@@ -73,7 +95,12 @@ class NMT(nn.Module):
         source_lengths = [len(s) for s in source]
 
         # Convert list of lists into tensors
+        
+        ### FROM ASSIGNMENT 4
+        # source_padded = self.vocab.src.to_input_tensor(source, device=self.device)   # Tensor: (src_len, b)
+        target_padded = self.vocab.tgt.to_input_tensor(target, device=self.device)   # Tensor: (tgt_len, b)
 
+        
         ### YOUR CODE HERE for part 1i
         ### TODO:
         ###     Modify the code lines above as needed to fetch the character-level tensor
@@ -83,6 +110,15 @@ class NMT(nn.Module):
         ###     - Add `target_padded_chars` for character level padded encodings for target
         ###     - Modify calls to encode() and decode() to use the character level encodings
 
+        # Tensor: (max_sentence_length, batch_size, max_word_length)
+        source_padded_chars = self.vocab.src.to_input_tensor_char(source, device=self.device)
+        # Tensor: (max_sentence_length, batch_size, max_word_length)
+        target_padded_chars = self.vocab.tgt.to_input_tensor_char(target, device=self.device)
+
+        enc_hiddens, dec_init_state = self.encode(source_padded_chars, source_lengths)
+        enc_masks = self.generate_sent_masks(enc_hiddens, source_lengths)
+        combined_outputs = self.decode(enc_hiddens, enc_masks, dec_init_state, target_padded_chars)
+
         ### END YOUR CODE
 
         P = F.log_softmax(self.target_vocab_projection(combined_outputs), dim=-1)
@@ -91,8 +127,8 @@ class NMT(nn.Module):
         target_masks = (target_padded != self.vocab.tgt['<pad>']).float()
 
         # Compute log probability of generating true target words
-        target_gold_words_log_prob = torch.gather(P, index=target_padded[1:].unsqueeze(-1), dim=-1).squeeze(
-            -1) * target_masks[1:]
+        print(f'P {P.shape}, {target_padded[1:].unsqueeze(-1).shape}')
+        target_gold_words_log_prob = torch.gather(P, index=target_padded[1:].unsqueeze(-1), dim=-1).squeeze(-1) * target_masks[1:]
         scores = target_gold_words_log_prob.sum()  # mhahn2 Small modification from A4 code.
 
         if self.charDecoder is not None:
@@ -127,6 +163,27 @@ class NMT(nn.Module):
 
         ### COPY OVER YOUR CODE FROM ASSIGNMENT 4
         ### Except replace "self.model_embeddings.source" with "self.model_embeddings_source"
+        # 1
+        X = self.model_embeddings_source(source_padded)
+        
+        # 2
+        ##########
+        # 2020/02/13 modification. Not sure if this line caused the error.
+        # line 130 of this file.
+        # RuntimeError: invalid argument 4: Index tensor must have same dimensions as input tensor 
+        # 2020/02/14 NOPE.
+        # 
+        X = pack_padded_sequence(X, torch.Tensor(source_lengths))
+        # X = pack_padded_sequence(X, source_lengths)
+        ##########
+        
+        enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
+        enc_hiddens = pad_packed_sequence(enc_hiddens)[0].permute(1, 0, 2)
+
+        # 3
+        init_decoder_hidden = self.h_projection(torch.cat((last_hidden[0], last_hidden[1]), 1))
+        init_decoder_cell = self.c_projection(torch.cat((last_cell[0], last_cell[1]), 1))
+        dec_init_state = (init_decoder_hidden, init_decoder_cell)
 
         ### END YOUR CODE FROM ASSIGNMENT 4
 
@@ -160,6 +217,18 @@ class NMT(nn.Module):
 
         ### COPY OVER YOUR CODE FROM ASSIGNMENT 4
         ### Except replace "self.model_embeddings.target" with "self.model_embeddings_target"
+        # 1
+        enc_hiddens_proj = self.att_projection(enc_hiddens)
+        # 2
+        Y = self.model_embeddings_target(target_padded)
+        # 3
+        for Y_t in torch.split(Y, 1, dim=0):
+            Ybar_t = torch.cat((torch.squeeze(Y_t, 0), o_prev), 1)
+            dec_state, o_t, _ = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
+            combined_outputs.append(o_t)
+            o_prev = o_t
+        # 4
+        combined_outputs = torch.stack(combined_outputs)
 
         ### END YOUR CODE FROM ASSIGNMENT 4
 
@@ -193,6 +262,11 @@ class NMT(nn.Module):
         combined_output = None
 
         ### COPY OVER YOUR CODE FROM ASSIGNMENT 4
+        dec_state = self.decoder(Ybar_t, dec_state)
+        # 2
+        (dec_hidden, dec_cell) = dec_state
+        # 3. (b, src_len, h) x (b, h, 1) -> (b, src_len, 1) -> (b, src_len)
+        e_t = (enc_hiddens_proj @ dec_hidden.unsqueeze(2)).squeeze(2)
 
         ### END YOUR CODE FROM ASSIGNMENT 4
 
@@ -201,6 +275,15 @@ class NMT(nn.Module):
             e_t.data.masked_fill_(enc_masks.bool(), -float('inf'))
 
         ### COPY OVER YOUR CODE FROM ASSIGNMENT 4
+        alpha_t = F.softmax(e_t, dim=1)
+        # 2 (b, 1, src_len) x (b, src_len, 2h) -> (b, 1, 2h) -> (b, 2h)
+        a_t = (alpha_t.unsqueeze(1) @ enc_hiddens).squeeze(1)
+        # 3
+        U_t = torch.cat((dec_hidden, a_t), 1)
+        # 4
+        V_t = self.combined_output_projection(U_t)
+        # 5
+        O_t = self.dropout(torch.tanh(V_t))
 
         ### END YOUR CODE FROM ASSIGNMENT 4
 

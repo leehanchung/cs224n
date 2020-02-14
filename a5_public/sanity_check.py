@@ -141,7 +141,6 @@ def main():
     """ Main func.
     """
     args = docopt(__doc__)
-    print(asdf)
     # Check Python & PyTorch Versions
     assert (sys.version_info >= (3, 5)), "Please update your installation of Python to version >= 3.5"
     assert(torch.__version__ >= "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
