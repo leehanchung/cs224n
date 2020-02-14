@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 5
+CS224N 2019-20: Homework 5
 run.py: Run Script for Simple NMT Model
 Pencheng Yin <pcyin@cs.cmu.edu>
 Sahil Chopra <schopra8@stanford.edu>
+Kuangcong Liu <cecilia4@stanford.edu>
 
 Usage:
     run.py train --train-src=<file> --train-tgt=<file> --dev-src=<file> --dev-tgt=<file> --vocab=<file> [options]
@@ -22,7 +23,7 @@ Options:
     --vocab=<file>                          vocab file
     --seed=<int>                            seed [default: 0]
     --batch-size=<int>                      batch size [default: 32]
-    --embed-size=<int>                      embedding size [default: 256]
+    --word-embed-size=<int>                 word embedding size [default: 256]
     --hidden-size=<int>                     hidden size [default: 256]
     --clip-grad=<float>                     gradient clipping [default: 5.0]
     --log-every=<int>                       log every [default: 10]
@@ -45,7 +46,7 @@ import math
 import sys
 import pickle
 import time
-
+import re
 
 from docopt import docopt
 from nltk.translate.bleu_score import corpus_bleu, sentence_bleu, SmoothingFunction
@@ -59,6 +60,7 @@ from vocab import Vocab, VocabEntry
 import torch
 import torch.nn.utils
 
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 def evaluate_ppl(model, dev_data, batch_size=32):
     """ Evaluate perplexity on dev sentences
@@ -125,7 +127,7 @@ def train(args: Dict):
 
     vocab = Vocab.load(args['--vocab'])
 
-    model = NMT(embed_size=int(args['--embed-size']),
+    model = NMT(word_embed_size=int(args['--word-embed-size']),
                 hidden_size=int(args['--hidden-size']),
                 dropout_rate=float(args['--dropout']),
                 vocab=vocab, no_char_decoder=args['--no-char-decoder'])
@@ -291,7 +293,10 @@ def decode(args: Dict[str, str]):
     with open(args['OUTPUT_FILE'], 'w') as f:
         for src_sent, hyps in zip(test_data_src, hypotheses):
             top_hyp = hyps[0]
-            hyp_sent = ' '.join(top_hyp.value)
+            detokenizer = TreebankWordDetokenizer()
+            detokenizer.DOUBLE_DASHES = (re.compile(r'--'), r'--')
+            hyp_sent = detokenizer.detokenize(top_hyp.value)
+            # hyp_sent = ' '.join(top_hyp.value)
             f.write(hyp_sent + '\n')
 
 
@@ -324,7 +329,7 @@ def main():
     args = docopt(__doc__)
 
     # Check pytorch version
-    assert(torch.__version__ == "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
+    assert(torch.__version__ >= "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
 
     # seed the random number generators
     seed = int(args['--seed'])

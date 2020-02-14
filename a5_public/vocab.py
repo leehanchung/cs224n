@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-CS224N 2018-19: Homework 5
+CS224N 2019-20: Homework 5
 vocab.py: Vocabulary Generation
 Pencheng Yin <pcyin@cs.cmu.edu>
 Sahil Chopra <schopra8@stanford.edu>
@@ -26,10 +26,12 @@ import torch
 from typing import List
 from utils import read_corpus, pad_sents, pad_sents_char
 
+
 class VocabEntry(object):
     """ Vocabulary Entry, i.e. structure containing either
     src or tgt language terms.
     """
+
     def __init__(self, word2id=None):
         """ Init VocabEntry Instance.
         @param word2id (dict): dictionary mapping words 2 indices
@@ -38,43 +40,49 @@ class VocabEntry(object):
             self.word2id = word2id
         else:
             self.word2id = dict()
-            self.word2id['<pad>'] = 0   # Pad Token
-            self.word2id['<s>'] = 1 # Start Token
-            self.word2id['</s>'] = 2    # End Token
-            self.word2id['<unk>'] = 3   # Unknown Token
+            self.word2id['<pad>'] = 0  # Pad Token
+            self.word2id['<s>'] = 1  # Start Token
+            self.word2id['</s>'] = 2  # End Token
+            self.word2id['<unk>'] = 3  # Unknown Token
         self.unk_id = self.word2id['<unk>']
         self.id2word = {v: k for k, v in self.word2id.items()}
-        
-        ## Additions to the A4 code:
-        self.char_list = list("""ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]""")
 
-        self.char2id = dict() # Converts characters to integers
-        self.char2id['<pad>'] = 0
-        self.char2id['{'] = 1
-        self.char2id['}'] = 2
-        self.char2id['<unk>'] = 3
+        ## Additions to the A4 code:
+        self.char_list = list(
+            """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]""")
+
+        self.char2id = dict()  # Converts characters to integers
+        # self.char2id['∏'] = 0  # <pad> token
+        self.char2id['<pad>'] = 0  # <pad> token
+        self.char2id['{'] = 1  # start of word token
+        self.char2id['}'] = 2  # end of word token
+        # self.char2id['Û'] = 3  # <unk> token
+        self.char2id['<unk>'] = 3  # <unk> token
         for i, c in enumerate(self.char_list):
             self.char2id[c] = len(self.char2id)
+        # self.char_pad = self.char2id['∏']
+        self.char_pad = self.char2id['<pad>']
+        # self.char_unk = self.char2id['Û']
         self.char_unk = self.char2id['<unk>']
         self.start_of_word = self.char2id["{"]
         self.end_of_word = self.char2id["}"]
-        assert self.start_of_word+1 == self.end_of_word
+        assert self.start_of_word + 1 == self.end_of_word
 
-        self.id2char = {v: k for k, v in self.char2id.items()} # Converts integers to characters
+        self.id2char = {v: k for k, v in self.char2id.items()}  # Converts integers to characters
         ## End additions to the A4 code
 
     def __getitem__(self, word):
         """ Retrieve word's index. Return the index for the unk
         token if the word is out of vocabulary.
         @param word (str): word to look up.
-        @returns index (int): index of word 
+        @returns index (int): index of word
         """
         return self.word2id.get(word, self.unk_id)
 
     def __contains__(self, word):
         """ Check if word is captured by VocabEntry.
         @param word (str): word to look up
-        @returns contains (bool): whether word is contained    
+        @returns contains (bool): whether word is contained
         """
         return word in self.word2id
 
@@ -119,17 +127,7 @@ class VocabEntry(object):
         @param sents (list[list[str]]): sentence(s) in words
         @return word_ids (list[list[list[int]]]): sentence(s) in indices
         """
-        ### YOUR CODE HERE for part 1e
-        ### TODO: 
-        ###     This method should convert characters in the input sentences into their 
-        ###     corresponding character indices using the character vocabulary char2id 
-        ###     defined above.
-        ###
-        ###     You must prepend each word with the `start_of_word` character and append 
-        ###     with the `end_of_word` character. 
-
-
-        ### END YOUR CODE
+        return [[[self.char2id.get(c, self.char_unk) for c in ("{" + w + "}")] for w in s] for s in sents]
 
     def words2indices(self, sents):
         """ Convert list of sentences of words into list of list of indices.
@@ -146,7 +144,7 @@ class VocabEntry(object):
         return [self.id2word[w_id] for w_id in word_ids]
 
     def to_input_tensor_char(self, sents: List[List[str]], device: torch.device) -> torch.Tensor:
-        """ Convert list of sentences (words) into tensor with necessary padding for 
+        """ Convert list of sentences (words) into tensor with necessary padding for
         shorter sentences.
 
         @param sents (List[List[str]]): list of sentences (words)
@@ -154,11 +152,29 @@ class VocabEntry(object):
 
         @returns sents_var: tensor of (max_sentence_length, batch_size, max_word_length)
         """
-        ### YOUR CODE HERE for part 1g
-        ### TODO: 
-        ###     Connect `words2charindices()` and `pad_sents_char()` which you've defined in 
-        ###     previous parts
-        
+        ### YOUR CODE HERE for part 1e
+        ### TODO:
+        ###     - Use `words2charindices()` from this file, which converts each character to its corresponding index in the
+        ###       character-vocabulary.
+        ###     - Use `pad_sents_char()` from utils.py, which pads all words to max_word_length of all words in the batch,
+        ###       and pads all sentences to max length of all sentences in the batch. Read __init__ to see how to get
+        ###       index of character-padding token
+        ###     - Connect these two parts to convert the resulting padded sentences to a torch tensor.
+        ### HINT:
+        ###     - You may find .contiguous() useful after reshaping. Check the following links for more details:
+        ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.contiguous
+        ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
+
+        idx = self.words2charindices(sents)
+        # (batch_size, max_sentence_length, max_word_length)
+        padded_idx =  pad_sents_char(sents=idx,
+                                     char_pad_token=self.char2id['<pad>'])
+        # list -> tensor. Swap axis 0 and 1. (max_sentence_length, batch_size, max_word_length)
+        # added dtype=torch.long. pytorch complains at 1j training time.
+        sents_var = torch.tensor(padded_idx,
+                                 dtype=torch.long,
+                                 device=device).permute(1, 0, 2)
+        return sents_var
 
         ### END YOUR CODE
 
@@ -198,6 +214,7 @@ class VocabEntry(object):
 class Vocab(object):
     """ Vocab encapsulating src and target langauges.
     """
+
     def __init__(self, src_vocab: VocabEntry, tgt_vocab: VocabEntry):
         """ Init Vocab.
         @param src_vocab (VocabEntry): VocabEntry for source language
@@ -247,7 +264,6 @@ class Vocab(object):
         when printing the object.
         """
         return 'Vocab(source %d words, target %d words)' % (len(self.src), len(self.tgt))
-
 
 
 if __name__ == '__main__':
