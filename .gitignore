@@ -6,3 +6,5 @@ __pycache__
 *.npy
 *.pickle
 a5_public/*.json
+a5_public/model.bin*
+
