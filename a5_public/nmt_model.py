@@ -99,8 +99,7 @@ class NMT(nn.Module):
         ### FROM ASSIGNMENT 4
         # source_padded = self.vocab.src.to_input_tensor(source, device=self.device)   # Tensor: (src_len, b)
         target_padded = self.vocab.tgt.to_input_tensor(target, device=self.device)   # Tensor: (tgt_len, b)
-
-        
+                
         ### YOUR CODE HERE for part 1i
         ### TODO:
         ###     Modify the code lines above as needed to fetch the character-level tensor
@@ -119,6 +118,9 @@ class NMT(nn.Module):
         enc_masks = self.generate_sent_masks(enc_hiddens, source_lengths)
         combined_outputs = self.decode(enc_hiddens, enc_masks, dec_init_state, target_padded_chars)
 
+        # print(f'[DEBUG] target_padded {target_padded.shape}')
+        # print(f'[DEBUG] source_padded_chars {target_padded_chars.shape}')
+        # print(f'[DEBUG] target_padded_chars {target_padded_chars.shape}')
         ### END YOUR CODE
 
         P = F.log_softmax(self.target_vocab_projection(combined_outputs), dim=-1)
@@ -127,7 +129,9 @@ class NMT(nn.Module):
         target_masks = (target_padded != self.vocab.tgt['<pad>']).float()
 
         # Compute log probability of generating true target words
-        print(f'P {P.shape}, {target_padded[1:].unsqueeze(-1).shape}')
+        # print(f'[DEBUG] P shape {P.shape}')
+        # print(f'[DEBUG] target_padded unsqueeze shape {target_padded[1:].unsqueeze(-1).shape}')
+        # print(f'[DEBUG] target_mask shape {target_masks}')
         target_gold_words_log_prob = torch.gather(P, index=target_padded[1:].unsqueeze(-1), dim=-1).squeeze(-1) * target_masks[1:]
         scores = target_gold_words_log_prob.sum()  # mhahn2 Small modification from A4 code.
 

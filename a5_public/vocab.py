@@ -190,6 +190,9 @@ class VocabEntry(object):
         word_ids = self.words2indices(sents)
         sents_t = pad_sents(word_ids, self['<pad>'])
         sents_var = torch.tensor(sents_t, dtype=torch.long, device=device)
+        # print(f'[DEBUG][vocab.py] {len(word_ids)}')
+        # print(f'[DEBUG][vocab.py] {len(sents_t)}')
+        # print(f'[DEBUG][vocab.py] {sents_var.shape}')
         return torch.t(sents_var)
 
     @staticmethod
