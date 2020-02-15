@@ -99,7 +99,7 @@ class NMT(nn.Module):
         ### FROM ASSIGNMENT 4
         # source_padded = self.vocab.src.to_input_tensor(source, device=self.device)   # Tensor: (src_len, b)
         target_padded = self.vocab.tgt.to_input_tensor(target, device=self.device)   # Tensor: (tgt_len, b)
-                
+
         ### YOUR CODE HERE for part 1i
         ### TODO:
         ###     Modify the code lines above as needed to fetch the character-level tensor
