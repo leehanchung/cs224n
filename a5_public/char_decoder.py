@@ -36,6 +36,21 @@ class CharDecoder(nn.Module):
         ### YOUR CODE HERE for part 2a
         ### TODO - Implement the forward pass of the character decoder.
 
+        # (length, batch_size)
+        # print(f'[DEBUG][char_decoder.py][forward] input shape {input.shape}')
+        X_embed = self.decoderCharEmb(input)
+        # print(f'[DEBUG][char_decoder.py][forward] X_embed shape {X_embed.shape}')
+        # (length, batch_size, char_embed_size)
+        h_t, dec_hidden = self.charDecoder(X_embed, dec_hidden)
+        # print(f'[DEBUG][char_decoder.py][forward] h_t shape {h_t.shape}')
+        
+        # h_t, (length, batch_size, hidden_size)
+        scores = self.char_output_projection(h_t)
+        # print(f'[DEBUG][char_decoder.py][forward] scores shape {scores.shape}')
+        # print(f'[DEBUG][char_decoder.py][forward] vocab_size {len(self.target_vocab.char2id)}')
+        # scores, (length, batch_size, target_vocab size)
+        
+        return scores, dec_hidden
         ### END YOUR CODE
 
     def train_forward(self, char_sequence, dec_hidden=None):
@@ -54,6 +69,30 @@ class CharDecoder(nn.Module):
         ###       - Carefully read the documentation for nn.CrossEntropyLoss and our handout to see what this criterion have already included:
         ###             https://pytorch.org/docs/stable/nn.html#crossentropyloss
 
+        self.padding_idx = self.target_vocab.char2id['<pad>']
+
+        # batch sequence train input x_1...n with target x_2...n+1
+        input = char_sequence[:-1]
+        target = char_sequence[1:]
+        # print(f'[DEBUG][char_decoder.py][train_forward] input shape {input.shape}')
+        # print(f'[DEBUG][char_decoder.py][train_forward] target shape {target.shape}')
+        
+        # input, (length, batch_size)
+        scores, dec_hidden = self.forward(input, dec_hidden)
+        # print(f'[DEBUG][char_decoder.py][train_forward] scores shape {scores.shape}')
+        
+        # scores, (length, batch_size, target_vocab size)
+        # (14), (15). skip padding and sum the loss instead of average. 
+        self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=self.padding_idx,
+                                                      reduction='sum')
+        
+        # nn.CrossEntropyLoss takes (batch_size, number of classes),
+        # thus we have to reshape both scores and target
+        scores = scores.permute(1, 2, 0)
+        target = target.permute(1, 0)
+        loss_char_dec = self.cross_entropy_loss(scores, target)
+
+        return loss_char_dec
         ### END YOUR CODE
 
     def decode_greedy(self, initialStates, device, max_length=21):
