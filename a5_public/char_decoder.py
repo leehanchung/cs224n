@@ -127,7 +127,8 @@ class CharDecoder(nn.Module):
         # initialize decodedWords as a list of empty string
         decodedWords = [''] * batch_size
         # initialize a flag for each decoded words since in test time, the model might
-        # predict none end_of_word characters and we don't want to write those down.
+        # predict none end_of_word characters after we got an end_of_word and we don't
+        # want to write those down.
         decodedWords_flag = [False] * batch_size
         # print(f'[DEBUG][char_decoder.py] batch_size {batch_size}')
         # print(f'[DEBUG][char_decoder.py] current_char {current_char.shape}')
@@ -156,6 +157,7 @@ class CharDecoder(nn.Module):
                     if char not in ['{', '}', '<pad>', '<unk>']:
                         decodedWords[i] += char
                 else:
+                    # end_of_word seen. flag it to prevent further writing
                     decodedWords_flag[i] = True
 
         # print(f'[DEBUG][char_decoder.py] decodedWords {decodedWords}')

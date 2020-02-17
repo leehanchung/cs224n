@@ -12,24 +12,6 @@ Test cases for modules are included in files prefix `test`. Run them by:
 ## Notes:
 - Changed padding token to `<pad>` from `'∏'` in `vocab.py` and `sanity_check.py` to match `char_vocab_sanity_check.json`.
 - Changed padding token to `<unk>` from `'Û'` in `vocab.py` and `sanity_check.py` to match `char_vocab_sanity_check.json`.
-- Official handout `a5.pdf` does not state clearly (or reminds students) to copy functions from `assignment 4`. It's pretty easy to miss one or a few of them. The following are copied from `assignment 4`:
-    - `pad_sents` in `utils.py`
-    - `__init__` in `nmt_model.py`
-    - `encode` in `nmt_model.py`
-    - `decode` in `nmt_model.py`
-    - `step` in `nmt_model.py`
-- Seemingly compatbility problem. Without using `ceil_mode=True`, `sh run.sh train_local_q1` will fail to run. After changing `ceil_mode=True` in `cnn.py`, our network can pass `--no-char-decoder` with <1 loss and >99 BLEU score.
-```
-#############################
-# Setting ceil_mode=True, otherwise it throws
-# RuntimeError: Given input size: (256x1x12). Calculated output size: (256x1x0). Output size is too small
-# References:
-# https://github.com/pytorch/pytorch/issues/28625#issue-512206689
-# https://github.com/pytorch/pytorch/issues/26610#issue-496710180
-#############################
-self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1,
-                            ceil_mode=True)
-```
 - Modification of provided code in `nmt_model.py`:
 ```
 ###########
@@ -40,8 +22,25 @@ self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1,
 # target_chars = target_padded_chars[1:].view(-1, max_word_len)
 target_chars = target_padded_chars[1:].reshape(-1, max_word_len)
 ###########
-```            
-- Problem 2(d) trains fine. But when running tests it throws the error.
+```
+- Official handout `a5.pdf` does not state clearly (or reminds students) to copy functions from `assignment 4`. It's pretty easy to miss one or a few of them. The following are copied from `assignment 4`:
+    - `pad_sents` in `utils.py`
+    - `__init__` in `nmt_model.py`
+    - `encode` in `nmt_model.py`
+    - `decode` in `nmt_model.py`
+    - `step` in `nmt_model.py`
+- Seemingly compatbility problem. Without using `ceil_mode=True`, `sh run.sh train_local_q1` will fail to run. After changing `ceil_mode=True` in `cnn.py`, our network can pass `--no-char-decoder` with <1 loss and >99 BLEU score. 2020/02/16: switched to using `torch.max` since `ceil_mode=True` might returns dimension > 1, causing squeeze to not squeeze and dimension mismatch.
+```
+#############################
+# Setting ceil_mode=True, otherwise it throws
+# RuntimeError: Given input size: (256x1x12). Calculated output size: (256x1x0). Output size is too small
+# References:
+# https://github.com/pytorch/pytorch/issues/28625#issue-512206689
+# https://github.com/pytorch/pytorch/issues/26610#issue-496710180
+#############################
+self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1, ceil_mode=True)
+```
+- Problem 2(d) trains fine. But when running tests it throws the error. 2020/02/16: Fixed. The reason is when using ceil_mode=True, maxpool might return a dimension of 2 instead of 1, causing dimension mismatch. Switched to using torch.max.
 ```
 epoch 200, iter 1000, cum. loss 0.18, cum. ppl 1.01 cum. examples 200   
 begin validation ...
