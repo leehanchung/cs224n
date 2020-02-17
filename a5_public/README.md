@@ -18,6 +18,7 @@ Test cases for modules are included in files prefix `test`. Run them by:
     - `encode` in `nmt_model.py`
     - `decode` in `nmt_model.py`
     - `step` in `nmt_model.py`
+
 - Seemingly compatbility problem. Without using `ceil_mode=True`, `sh run.sh train_local_q1` will fail to run. After changing `ceil_mode=True` in `cnn.py`, our network can pass `--no-char-decoder` with <1 loss and >99 BLEU score.
 ```
 #############################
@@ -27,9 +28,9 @@ Test cases for modules are included in files prefix `test`. Run them by:
 # https://github.com/pytorch/pytorch/issues/28625#issue-512206689
 # https://github.com/pytorch/pytorch/issues/26610#issue-496710180
 #############################
-self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1,
-                            ceil_mode=True)
+self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1, ceil_mode=True)
 ```
+
 - Modification of provided code in `nmt_model.py`:
 ```
 ###########
