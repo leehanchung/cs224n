@@ -80,16 +80,20 @@ class CharDecoder(nn.Module):
         # input, (length, batch_size)
         scores, dec_hidden = self.forward(input, dec_hidden)
         # print(f'[DEBUG][char_decoder.py][train_forward] scores shape {scores.shape}')
-        
         # scores, (length, batch_size, target_vocab size)
+        
         # (14), (15). skip padding and sum the loss instead of average. 
         self.cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=self.padding_idx,
                                                       reduction='sum')
         
         # nn.CrossEntropyLoss takes (batch_size, number of classes),
-        # thus we have to reshape both scores and target
+        # thus we have to premute both scores and target batch size to the first dimension
+        # scores, (length, batch_size, target_vocab size)
+        # target, (length, batch_size)
         scores = scores.permute(1, 2, 0)
         target = target.permute(1, 0)
+        # scores, (batch_size, target_vocab size, length)
+        # target, (batch_size, length)
         loss_char_dec = self.cross_entropy_loss(scores, target)
 
         return loss_char_dec
@@ -115,5 +119,46 @@ class CharDecoder(nn.Module):
         ###      - We use curly brackets as start-of-word and end-of-word characters. That is, use the character '{' for <START> and '}' for <END>.
         ###        Their indices are self.target_vocab.start_of_word and self.target_vocab.end_of_word, respectively.
 
+        batch_size = initialStates[0].shape[1]
+        current_char = torch.tensor([[self.target_vocab.start_of_word] * batch_size],
+                                    device=device)
+        # current_char, (length, batch_size)
+        dec_hidden = initialStates
+        # initialize decodedWords as a list of empty string
+        decodedWords = [''] * batch_size
+        # initialize a flag for each decoded words since in test time, the model might
+        # predict none end_of_word characters and we don't want to write those down.
+        decodedWords_flag = [False] * batch_size
+        # print(f'[DEBUG][char_decoder.py] batch_size {batch_size}')
+        # print(f'[DEBUG][char_decoder.py] current_char {current_char.shape}')
+        # print(f'[DEBUG][char_decoder.py] decodedWords {decodedWords}')
+        # print(f'[DEBUG][char_decoder.py] decodedWords_flag {decodedWords_flag}')
+        
+        for _ in range(max_length):
+            scores, dec_hidden = self.forward(input=current_char,
+                                              dec_hidden=dec_hidden)
+            # print(f'[DEBUG][char_decoder.py] scores {scores.shape}')
+            # scores, (length, batch_size, target_vocab_size)
+            # argmax over the the vocab_size
+            current_char = torch.argmax(scores, dim=-1)
+            # print(f'[DEBUG][char_decoder.py] current_char {current_char.shape}')
+            
+            # current_char, (length, batch_size)
+            # convert current_char tensor to a list of idx
+            current_idx = current_char.tolist()[0]
+            # print(f'[DEBUG][char_decoder.py] current_idx {current_idx}')
+            # convert the idx to char and add to each decodedWords if not start, end, or pad.
+            for i, char_idx in enumerate(current_idx):#range(len(current_idx)):
+                char = self.target_vocab.id2char[char_idx]
+                # print(char, self.target_vocab.end_of_word)
+                if char is not '}' and not decodedWords_flag[i]:
+                    # don't write to word when its start, end, pad, or unk token
+                    if char not in ['{', '}', '<pad>', '<unk>']:
+                        decodedWords[i] += char
+                else:
+                    decodedWords_flag[i] = True
+
+        # print(f'[DEBUG][char_decoder.py] decodedWords {decodedWords}')
+        return decodedWords
         ### END YOUR CODE
 

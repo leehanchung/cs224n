@@ -16,7 +16,7 @@ class CNN(nn.Module):
     """
     # Remember to delete the above 'pass' after your implementation
     ### YOUR CODE HERE for part 1g
-    def __init__(self, char_embed_size:int, word_embed_size:int, max_len:int, kernel_size:int=5, padding:int=1):
+    def __init__(self, char_embed_size:int, word_embed_size:int, max_len:int=21, kernel_size:int=5, padding:int=1):
         """
         @param char_embed_size int: w_{char}
         @param word_embed_size int: w_{embed}, aka the # of filters for language modeling conv1d
@@ -32,14 +32,16 @@ class CNN(nn.Module):
                                 padding=padding,
                                 bias=True)
         #############################
+        # 2020/02/16 maxpool w/ ceil_mode=True will sometimes produce last dimention
+        # of size 2 instead of just size 1. Thus just going to .max() instead
         # Setting ceil_mode=True, otherwise it throws
         # RuntimeError: Given input size: (256x1x12). Calculated output size: (256x1x0). Output size is too small
         # References:
         # https://github.com/pytorch/pytorch/issues/28625#issue-512206689
         # https://github.com/pytorch/pytorch/issues/26610#issue-496710180
         #############################
-        self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1,
-                                    ceil_mode=True)
+        # self.maxpool1d = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1,
+        #                               ceil_mode=True)
 
     def forward(self, X_reshaped: torch.Tensor)-> torch.Tensor:
         """
@@ -53,9 +55,11 @@ class CNN(nn.Module):
         X_conv = self.conv1d(X_reshaped)
         # print(f'X_conv shape: {X_conv.shape}')
         # (5) (batch_size x word_embed_size x (max_len - k + 1))
-        X_conv_out = self.maxpool(F.relu(X_conv)).squeeze(-1)#-1)
+        # X_conv_out = self.maxpool1d(F.relu(X_conv)).squeeze()#-1)#-1)
+        X_conv_out = torch.max(X_conv, dim=2)[0]
         # print(f'X_conv_out shape: {X_conv_out.shape}')
         # (7) (batch_size x word_embed_size)
+        
         return X_conv_out
 
     ### END YOUR CODE

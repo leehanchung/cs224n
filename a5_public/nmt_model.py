@@ -139,7 +139,14 @@ class NMT(nn.Module):
             max_word_len = target_padded_chars.shape[-1]
 
             target_words = target_padded[1:].contiguous().view(-1)
-            target_chars = target_padded_chars[1:].view(-1, max_word_len)
+            ###########
+            # 2020/02/15 This line throws an runtime error:
+            # RuntimeError: view size is not compatible with input tensor's size and stride 
+            # (at least one dimension spans across two contiguous subspaces). 
+            # Use .reshape(...) instead.
+            # target_chars = target_padded_chars[1:].view(-1, max_word_len)
+            target_chars = target_padded_chars[1:].reshape(-1, max_word_len)
+            ###########
             target_outputs = combined_outputs.view(-1, 256)
 
             target_chars_oov = target_chars  # torch.index_select(target_chars, dim=0, index=oovIndices)
@@ -177,8 +184,8 @@ class NMT(nn.Module):
         # RuntimeError: invalid argument 4: Index tensor must have same dimensions as input tensor 
         # 2020/02/14 NOPE.
         # 
-        X = pack_padded_sequence(X, torch.Tensor(source_lengths))
-        # X = pack_padded_sequence(X, source_lengths)
+        # X = pack_padded_sequence(X, torch.Tensor(source_lengths))
+        X = pack_padded_sequence(X, source_lengths)
         ##########
         
         enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
@@ -346,7 +353,7 @@ class NMT(nn.Module):
             exp_src_encodings_att_linear = src_encodings_att_linear.expand(hyp_num,
                                                                            src_encodings_att_linear.size(1),
                                                                            src_encodings_att_linear.size(2))
-
+            
             y_tm1 = self.vocab.tgt.to_input_tensor_char(list([hyp[-1]] for hyp in hypotheses), device=self.device)
             y_t_embed = self.model_embeddings_target(y_tm1)
             y_t_embed = torch.squeeze(y_t_embed, dim=0)
