@@ -49,7 +49,7 @@ Coding: [Neural Machine Translation with RNN](./a5_public/README.md)
 Written: [Neural Machine Translation with RNN](./a5/a5_written.pdf)
 
 ## LICENSE
-All assignments and provided code scaffolds owned by Stanford
+All slides, notes, assignments, and provided code scaffolds are owned by Stanford University.
 
 You can use my solutions under the open CC BY-SA 3.0 license and cite it as:
 ```

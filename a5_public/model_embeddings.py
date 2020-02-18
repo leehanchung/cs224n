@@ -79,7 +79,7 @@ class ModelEmbeddings(nn.Module):
 
         # (sentence_length*batch_size, max_word_length, char_embed_size)
         # Necessary to permute because the PyTorch Conv1D function performs the convolution 
-        # only on thelastdimension of the input
+        # only on the last dimension of the input
         X_reshaped = X_embed.permute(0, 2, 1)
         
         # (sentence_length*batch_size, char_embed_size, max_word_length)
