@@ -42,9 +42,13 @@ Written: [Analyzing NMT Systems](./a4/a4_written.pdf)
 
 ## Assignment 5 Public :heavy_check_mark:
 
-This network is much harder to train despite of consistently having around 1200 words/second on average vs 700 words/second on average in assignment 4. By 15 hours mark, its only at epoch 15 with loss hovering around 90 using RTX 2080 Ti.
+2020/02/16 - This network is much harder to train despite of consistently having around 1200 words/second on average vs 700 words/second on average in assignment 4. By 15 hours mark, its only at epoch 15 with loss hovering around 90 using RTX 2080 Ti. VSCode screwed up and exited at around 20 hours mark at epoch 19 with loss hovering around 80-90, test BLEU score 24.35.
+
+2020/02/17 - Restarted run, using `batch_size=64` vs default 32. GPU memory at 10/11GB. Will see how it goes.
 
 Coding: [Neural Machine Translation with RNN](./a5_public/README.md)
+
+![Test](./a5_public/assets/training1.png)
 
 Written: [Neural Machine Translation with RNN](./a5/a5_written.pdf)
 
