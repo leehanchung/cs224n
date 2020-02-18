@@ -50,14 +50,11 @@ class CNN(nn.Module):
         @param X_reshaped (torch.Tensor): input from character embeddings, shape (batch_size, char_embed_size, max_len)
         @output X_conv_out (torch.Tensor): output of CNN module, shape (batch_szize, word_embd_size)
         """
-        # print(f'X_reshape shape: {X_reshaped.shape}')
         # X_reshaped: (batch_size, char_embed_size, max_len)
         X_conv = self.conv1d(X_reshaped)
-        # print(f'X_conv shape: {X_conv.shape}')
         # (5) (batch_size x word_embed_size x (max_len - k + 1))
         # X_conv_out = self.maxpool1d(F.relu(X_conv)).squeeze()#-1)#-1)
         X_conv_out = torch.max(X_conv, dim=2)[0]
-        # print(f'X_conv_out shape: {X_conv_out.shape}')
         # (7) (batch_size x word_embed_size)
         
         return X_conv_out
