@@ -68,7 +68,7 @@ class CharDecoder(nn.Module):
         # batch sequence train input x_1...n with target x_2...n+1
         input = char_sequence[:-1]
         target = char_sequence[1:]
-        
+
         # input, (length, batch_size)
         scores, dec_hidden = self.forward(input, dec_hidden)
         # (14), (15). skip padding and sum the loss instead of average. 
@@ -77,7 +77,7 @@ class CharDecoder(nn.Module):
         
         # nn.CrossEntropyLoss takes (batch_size, number of classes),
         # thus we have to premute both scores and target batch size to the first dimension
-        
+
         # scores, (length, batch_size, target_vocab size)
         # target, (length, batch_size)
         scores = scores.permute(1, 2, 0)
@@ -124,6 +124,7 @@ class CharDecoder(nn.Module):
         for _ in range(max_length):
             scores, dec_hidden = self.forward(input=current_char,
                                               dec_hidden=dec_hidden)
+
             # scores, (length, batch_size, target_vocab_size)
             # argmax over the the vocab_size
             current_char = torch.argmax(scores, dim=-1)
@@ -140,6 +141,7 @@ class CharDecoder(nn.Module):
                     if char not in ['{', '}', '<pad>', '<unk>']:
                         decodedWords[i] += char
                 else:
+
                     # end_of_word seen. flag it to prevent further writing
                     decodedWords_flag[i] = True
 

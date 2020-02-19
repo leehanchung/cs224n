@@ -34,6 +34,7 @@ target_chars = target_padded_chars[1:].reshape(-1, max_word_len)
     - `encode` in `nmt_model.py`
     - `decode` in `nmt_model.py`
     - `step` in `nmt_model.py`
+
 - Seemingly compatbility problem. Without using `ceil_mode=True`, `sh run.sh train_local_q1` will fail to run. After changing `ceil_mode=True` in `cnn.py`, our network can pass `--no-char-decoder` with <1 loss and >99 BLEU score. 2020/02/16: switched to using `torch.max` since `ceil_mode=True` might returns dimension > 1, causing squeeze to not squeeze and dimension mismatch.
 ```
 #############################
@@ -46,6 +47,18 @@ target_chars = target_padded_chars[1:].reshape(-1, max_word_len)
 self.maxpool = nn.MaxPool1d(kernel_size=max_len - kernel_size + 1, ceil_mode=True)
 ```
 - Problem 2(d) trains fine. But when running tests it throws the error. 2020/02/16: Fixed. The reason is when using ceil_mode=True, maxpool might return a dimension of 2 instead of 1, causing dimension mismatch. Switched to using torch.max.
+- Modification of provided code in `nmt_model.py`:
+```
+###########
+# 2020/02/15 This line throws an runtime error:
+# RuntimeError: view size is not compatible with input tensor's size and stride 
+# (at least one dimension spans across two contiguous subspaces). 
+# Use .reshape(...) instead.
+# target_chars = target_padded_chars[1:].view(-1, max_word_len)
+target_chars = target_padded_chars[1:].reshape(-1, max_word_len)
+###########
+```            
+- Problem 2(d) trains fine. But when running tests it throws the error.
 ```
 epoch 200, iter 1000, cum. loss 0.18, cum. ppl 1.01 cum. examples 200   
 begin validation ...
