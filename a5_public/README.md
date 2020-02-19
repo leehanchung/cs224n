@@ -1,11 +1,16 @@
 # CS224n Assignment 5
 Public version of assignment 5 from CS224n Winter 2020 coures website, [`a5_publc.zip`](http://web.stanford.edu/class/cs224n/assignments/a5_public.zip). For some reason the assignment handout is the same across both versions. Not sure what's the difference.
 
+- 2020/02/16 - This network is much harder to train despite of consistently having around 1200 words/second on average vs 700 words/second on average in assignment 4. By 15 hours mark, its only at epoch 15 with loss hovering around 90 using RTX 2080 Ti. VSCode screwed up and exited at around 20 hours mark at epoch 19 with loss hovering around 80-90, test BLEU score 24.35.
+
+- 2020/02/17 - Restarted run, using `batch_size=64` vs default 32, and set `max_epoch=60` vs default 30. GPU memory at 10/11GB. Training reached max epoch after around 34 hours, with training loss at the low 70s and validation perplexity at 59. Average words per second is around 2000 words per second.
 
 ## Unit tests:
 Test cases for modules are included in files prefix `test`. Run them by:
 
 ```python test_highway.py```
+
+
 ```python test_cnn.py```
 
 

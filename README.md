@@ -1,6 +1,10 @@
 # Stanford CS 224n Natural Language Processing with Deep Learning
 
+<<<<<<< HEAD
 Self study on Stanford CS 224n, Winter 2020. Special thanks to Stanford and Professor Chris Manning for making this great resources online and free to the public.
+=======
+Self study on Stanford CS 224n, Winter 2020. Special thanks to Stanford and Professor Chris Manning for making this great resources online and free to the public. No access to autograder, thus no guarantee that the solutions are correct.
+>>>>>>> a5
 
 [Lecture Videos, CS 224n, Winter 2019](https://www.youtube.com/playlist?list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z)
 
@@ -42,6 +46,7 @@ Written: [Analyzing NMT Systems](./a4/a4_written.pdf)
 
 ## Assignment 5 Public :heavy_check_mark:
 
+<<<<<<< HEAD
 2020/02/16 - This network is much harder to train despite of consistently having around 1200 words/second on average vs 700 words/second on average in assignment 4. By 15 hours mark, its only at epoch 15 with loss hovering around 90 using RTX 2080 Ti. VSCode screwed up and exited at around 20 hours mark at epoch 19 with loss hovering around 80-90, test BLEU score 24.35.
 
 2020/02/17 - Restarted run, using `batch_size=64` vs default 32. GPU memory at 10/11GB. Will see how it goes.
@@ -51,6 +56,18 @@ Coding: [Neural Machine Translation with RNN](./a5_public/README.md)
 ![Test](./a5_public/assets/training1.png)
 
 Written: [Neural Machine Translation with RNN](./a5/a5_written.pdf)
+=======
+Trained using `batch_size=64` vs default 32, and set `max_epoch=60` vs default 30 on a local RTX 2080 Ti. GPU memory at 10/11GB. Training reached maximum number of epochs after 34 hours, with training loss at the low 70s and validation perplexity at 59. Average words per second is around 2000 words per second. Test BLEU score 27.96. 
+
+
+Coding: [Neural Machine Translation with RNN](./a5_public/README.md)
+
+![Train](./a5_public/assets/training2.png)
+
+![Test](./a5_public/assets/test2.png)
+
+Written: [Neural Machine Translation with RNN](./a5_public/a5_written.pdf)
+>>>>>>> a5
 
 ## LICENSE
 All slides, notes, assignments, and provided code scaffolds are owned by Stanford University.
