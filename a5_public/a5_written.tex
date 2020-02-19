@@ -113,7 +113,7 @@ Therefore, the word embedding model contains almost 64x as many parameters than 
 
 \bigbreak
 \noindent
-\textbf{Answer:} Accidentally changed VSCode environnment after ~20 hours of training on RTX 2080 Ti on my local machine at around epoch 19, loss is oscillating low 80 and low 90s, \verb|BLEU score| is \textbf{24.35}. Restarted the run and set batch size to 64 instead of default 32, GPU memory usage at $9.7/11GB$.
+\textbf{Answer:} We ran the model using $batch-size=64$ vs default 32 and $max-epoch=60$ on RTX 2080 Ti on a local machine. It hit maximum number of epochs at around 34 hour mark. \verb|BLEU score| is \textbf{27.96}. Since the training loss and validation perplexity are still decreasing, however slow it might be, we suspect that we might achieve \verb|BLEU > 36| for the full 6 points. With a \verb|BLEU| score of 28, no points will be awarded. We will circle back in a later date to retrain the model. :(
 
 \section{Analyzing NMT Systems (8 points)}
 \bigbreak
