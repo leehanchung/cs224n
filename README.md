@@ -56,14 +56,3 @@ Written: [Neural Machine Translation with RNN](./a5_public/a5_written.pdf)
 
 ## LICENSE
 All slides, notes, assignments, and provided code scaffolds are owned by Stanford University.
-
-You can use my solutions under the open CC BY-SA 3.0 license and cite it as:
-```
-@misc{leehanchung,
-  author = {Lee, Hanchung},
-  title = {CS224n Solutions},
-  year = {2020},
-  howpublished = {Github Repo},
-  url = {https://github.com/leehanchung/cs224n}
-}
-```
