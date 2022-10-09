@@ -89,7 +89,7 @@ Please repeat parts (b) and (c), computing the partial derivatives of $J_{neg-sa
 \textbf{Answer:}
 \begin{align*}
 \frac{\partial J}{\partial u_o} &= (\sigma(u_o^\intercal v_c) - 1)v_c \\
-\frac{\partial J}{\partial u_k} &= (\sigma(u_k^\intercal v_c) - 1)v_c, \forall k \in [1, K] \\
+\frac{\partial J}{\partial u_k} &= (1 - \sigma(-u_k^\intercal v_c))v_c, \forall k \in [1, K] \\
 \frac{\partial J}{\partial v_c} &=  (\sigma(u_o^\intercal v_c) - 1)u_o - \sum_{k=1}^{K}(\sigma(-u_k^\intercal v_c)-1)u_k
 \end{align*}
 \textbf{Answer:} For naive softmax loss, it computes the whole outside vectors $U$.  But for negative sampling loss, it only calculates a fixed size K. Thus, negative sampling loss is more compute and memory efficient
